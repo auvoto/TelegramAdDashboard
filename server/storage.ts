@@ -1,4 +1,4 @@
-import { users, channels, type User, type InsertUser, type Channel, type InsertChannel } from "@shared/schema";
+import { users, channels, pixelSettings, type User, type InsertUser, type Channel, type InsertChannel, type PixelSettings, type InsertPixelSettings } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -14,6 +14,12 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getUsers(): Promise<User[]>;
+  updateUserRole(userId: number, role: string): Promise<User>;
+
+  getPixelSettings(userId: number): Promise<PixelSettings | undefined>;
+  createPixelSettings(settings: InsertPixelSettings, userId: number): Promise<PixelSettings>;
+  updatePixelSettings(userId: number, settings: InsertPixelSettings): Promise<PixelSettings>;
 
   createChannel(channel: InsertChannel, userId: number, logoFile: Express.Multer.File): Promise<Channel>;
   getChannel(uuid: string): Promise<Channel | undefined>;
@@ -42,13 +48,50 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.isActive, true));
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
+  async updateUserRole(userId: number, role: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ role })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getPixelSettings(userId: number): Promise<PixelSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(pixelSettings)
+      .where(eq(pixelSettings.userId, userId));
+    return settings;
+  }
+
+  async createPixelSettings(insertSettings: InsertPixelSettings, userId: number): Promise<PixelSettings> {
+    const [settings] = await db
+      .insert(pixelSettings)
+      .values({ ...insertSettings, userId })
+      .returning();
+    return settings;
+  }
+
+  async updatePixelSettings(userId: number, insertSettings: InsertPixelSettings): Promise<PixelSettings> {
+    const [settings] = await db
+      .update(pixelSettings)
+      .set(insertSettings)
+      .where(eq(pixelSettings.userId, userId))
+      .returning();
+    return settings;
+  }
+
   async createChannel(insertChannel: InsertChannel, userId: number, logoFile: Express.Multer.File): Promise<Channel> {
-    // Save logo file
     const uuid = randomUUID();
     const filename = `${uuid}-${logoFile.originalname}`;
     const uploadDir = join(process.cwd(), 'uploads', 'logos');

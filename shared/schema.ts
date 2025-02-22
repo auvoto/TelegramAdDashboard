@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -6,6 +6,16 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("employee"),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+export const pixelSettings = pgTable("pixel_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  pixelId: text("pixel_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const channels = pgTable("channels", {
@@ -23,7 +33,14 @@ export const channels = pgTable("channels", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  role: true,
 });
+
+export const insertPixelSettingsSchema = createInsertSchema(pixelSettings)
+  .pick({
+    pixelId: true,
+    accessToken: true,
+  });
 
 export const insertChannelSchema = createInsertSchema(channels)
   .pick({
@@ -31,7 +48,7 @@ export const insertChannelSchema = createInsertSchema(channels)
     subscribers: true, 
     inviteLink: true,
     description: true,
-    logo:true
+    logo: true
   })
   .extend({
     subscribers: z.coerce.number().min(0),
@@ -41,5 +58,7 @@ export const insertChannelSchema = createInsertSchema(channels)
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type InsertPixelSettings = z.infer<typeof insertPixelSettingsSchema>;
+export type PixelSettings = typeof pixelSettings.$inferSelect;
 export type InsertChannel = z.infer<typeof insertChannelSchema>;
 export type Channel = typeof channels.$inferSelect;
