@@ -30,10 +30,17 @@ export const channels = pgTable("channels", {
   userId: integer("user_id").notNull(),
 });
 
+// Only used internally for admin creating new employees
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   role: true,
+});
+
+// Login schema - only username and password
+export const loginUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
 });
 
 export const insertPixelSettingsSchema = createInsertSchema(pixelSettings)
@@ -57,6 +64,7 @@ export const insertChannelSchema = createInsertSchema(channels)
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPixelSettings = z.infer<typeof insertPixelSettingsSchema>;
 export type PixelSettings = typeof pixelSettings.$inferSelect;
