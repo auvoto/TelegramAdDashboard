@@ -182,10 +182,16 @@ export default function Dashboard() {
       if (!res.ok) {
         throw new Error(await res.text());
       }
+      return id; // Return the ID to onSuccess
     },
-    onSuccess: () => {
-      // Invalidate and refetch channels query to update UI
-      queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
+    onSuccess: (_, deletedId) => {
+      // Update the channels data in the cache by filtering out the deleted channel
+      const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
+      queryClient.setQueryData(
+        ["/api/channels"],
+        currentChannels.filter(channel => channel.id !== deletedId)
+      );
+
       toast({
         title: "Channel deleted",
         description: "Your landing page has been deleted successfully.",
