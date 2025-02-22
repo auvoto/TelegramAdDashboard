@@ -15,170 +15,10 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { insertChannelSchema, type Channel } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Users, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, Users, Trash2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import React from 'react';
-
-// Edit Channel Dialog Component
-function EditChannelDialog({ 
-  channel, 
-  isOpen, 
-  onOpenChange
-}: { 
-  channel: Channel | null;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const { toast } = useToast();
-  const form = useForm({
-    resolver: zodResolver(insertChannelSchema),
-    defaultValues: {
-      name: "",
-      subscribers: 0,
-      inviteLink: "",
-      description: "",
-      logo: undefined,
-    },
-  });
-
-  // Reset form when channel or dialog state changes
-  React.useEffect(() => {
-    if (channel && isOpen) {
-      form.reset({
-        name: channel.name,
-        subscribers: channel.subscribers,
-        inviteLink: channel.inviteLink,
-        description: channel.description || "",
-      });
-    }
-  }, [channel, isOpen, form]);
-
-  const editChannelMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      if (!channel) return;
-      const response = await fetch(`/api/channels/${channel.id}`, {
-        method: "PATCH",
-        body: formData,
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
-      toast({
-        title: "Success",
-        description: "Channel updated successfully",
-      });
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: any) => {
-    if (!channel) return;
-
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("subscribers", String(data.subscribers));
-    formData.append("inviteLink", data.inviteLink);
-    if (data.description) {
-      formData.append("description", data.description);
-    }
-
-    const logoFiles = data.logo as FileList;
-    if (logoFiles && logoFiles.length > 0) {
-      formData.append("logo", logoFiles[0]);
-    }
-
-    editChannelMutation.mutate(formData);
-  };
-
-  return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        if (!open) {
-          form.reset();
-        }
-        onOpenChange(open);
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Channel Landing Page</DialogTitle>
-          <DialogDescription>
-            Update the details of your channel landing page.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Channel Name</Label>
-            <Input {...form.register("name")} />
-            {form.formState.errors.name && (
-              <p className="text-sm text-red-500 mt-1">
-                {form.formState.errors.name.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="subscribers">Subscribers</Label>
-            <Input type="number" {...form.register("subscribers")} />
-            {form.formState.errors.subscribers && (
-              <p className="text-sm text-red-500 mt-1">
-                {form.formState.errors.subscribers.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="logo">Channel Logo</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              {...form.register("logo")}
-            />
-          </div>
-          <div>
-            <Label htmlFor="inviteLink">Telegram Invite Link</Label>
-            <Input {...form.register("inviteLink")} />
-            {form.formState.errors.inviteLink && (
-              <p className="text-sm text-red-500 mt-1">
-                {form.formState.errors.inviteLink.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              {...form.register("description")}
-              rows={6}
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={editChannelMutation.isPending}
-          >
-            {editChannelMutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Save Changes
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // Create Channel Dialog Component
 function CreateChannelDialog({
@@ -239,7 +79,7 @@ function CreateChannelDialog({
       formData.append("description", data.description);
     }
 
-    const logoFiles = (data.logo as FileList);
+    const logoFiles = data.logo as FileList;
     if (logoFiles && logoFiles.length > 0) {
       formData.append("logo", logoFiles[0]);
     }
@@ -327,8 +167,6 @@ function CreateChannelDialog({
 export default function Dashboard() {
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
-  const [editingChannel, setEditingChannel] = React.useState<Channel | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
 
   const channelsQuery = useQuery<Channel[]>({
@@ -433,17 +271,6 @@ export default function Dashboard() {
                     >
                       Copy URL
                     </Button>
-                    <Button 
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => {
-                        setEditingChannel(channel);
-                        setIsEditDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
                     <Button
                       variant="outline"
                       className="flex-1"
@@ -467,17 +294,6 @@ export default function Dashboard() {
       <CreateChannelDialog
         isOpen={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-      />
-
-      <EditChannelDialog
-        channel={editingChannel}
-        isOpen={isEditDialogOpen}
-        onOpenChange={(open) => {
-          setIsEditDialogOpen(open);
-          if (!open) {
-            setEditingChannel(null);
-          }
-        }}
       />
     </div>
   );
