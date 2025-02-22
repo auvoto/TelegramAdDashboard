@@ -22,8 +22,10 @@ export interface IStorage {
   updatePixelSettings(userId: number, settings: InsertPixelSettings): Promise<PixelSettings>;
 
   createChannel(channel: InsertChannel, userId: number, logoFile: Express.Multer.File): Promise<Channel>;
+  updateChannel(channelId: number, channel: Partial<InsertChannel>, logoFile?: Express.Multer.File): Promise<Channel>;
   getChannel(uuid: string): Promise<Channel | undefined>;
   getUserChannels(userId: number): Promise<Channel[]>;
+  deleteChannel(channelId: number): Promise<void>;
 
   sessionStore: session.Store;
 }
@@ -114,6 +116,33 @@ export class DatabaseStorage implements IStorage {
     return channel;
   }
 
+  async updateChannel(channelId: number, channel: Partial<InsertChannel>, logoFile?: Express.Multer.File): Promise<Channel> {
+    let logoUrl;
+
+    if (logoFile) {
+      const uuid = randomUUID();
+      const filename = `${uuid}-${logoFile.originalname}`;
+      const uploadDir = join(process.cwd(), 'uploads', 'logos');
+      await mkdir(uploadDir, { recursive: true });
+
+      const logoPath = join(uploadDir, filename);
+      await writeFile(logoPath, logoFile.buffer);
+
+      logoUrl = `/uploads/logos/${filename}`;
+    }
+
+    const [updatedChannel] = await db
+      .update(channels)
+      .set({ 
+        ...channel,
+        ...(logoUrl && { logo: logoUrl }),
+      })
+      .where(eq(channels.id, channelId))
+      .returning();
+
+    return updatedChannel;
+  }
+
   async getChannel(uuid: string): Promise<Channel | undefined> {
     const [channel] = await db.select().from(channels).where(eq(channels.uuid, uuid));
     return channel;
@@ -121,6 +150,10 @@ export class DatabaseStorage implements IStorage {
 
   async getUserChannels(userId: number): Promise<Channel[]> {
     return await db.select().from(channels).where(eq(channels.userId, userId));
+  }
+
+  async deleteChannel(channelId: number): Promise<void> {
+    await db.delete(channels).where(eq(channels.id, channelId));
   }
 }
 

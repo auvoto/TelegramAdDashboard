@@ -55,23 +55,24 @@ function EditChannelDialog({
   }, [channel, isOpen, form]);
 
   const editChannelMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (formData: FormData) => {
       if (!channel) return;
-      const res = await fetch(`/api/channels/${channel.id}`, {
+      const response = await fetch(`/api/channels/${channel.id}`, {
         method: "PATCH",
-        body: data,
+        body: formData,
         credentials: "include",
       });
-      if (!res.ok) {
-        throw new Error(await res.text());
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
       }
-      return res.json();
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
       toast({
-        title: "Channel updated",
-        description: "Your landing page has been updated successfully.",
+        title: "Success",
+        description: "Channel updated successfully",
       });
       onOpenChange(false);
     },
@@ -95,7 +96,7 @@ function EditChannelDialog({
       formData.append("description", data.description);
     }
 
-    const logoFiles = (data.logo as FileList);
+    const logoFiles = data.logo as FileList;
     if (logoFiles && logoFiles.length > 0) {
       formData.append("logo", logoFiles[0]);
     }
@@ -409,7 +410,7 @@ export default function Dashboard() {
               <Card key={channel.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <img src={channel.logo} alt={channel.name} className="w-12 h-12 rounded-full" />
+                    <img src={channel.logo} alt={channel.name} className="w-12 h-12 rounded-full object-cover" />
                     <div>
                       <CardTitle>{channel.name}</CardTitle>
                       <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
