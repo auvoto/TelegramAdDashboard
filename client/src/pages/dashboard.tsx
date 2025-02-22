@@ -15,9 +15,10 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { insertChannelSchema, type Channel } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Users } from "lucide-react";
+import { Loader2, Plus, Users, Pencil, Trash2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import React from 'react';
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -37,6 +38,30 @@ export default function Dashboard() {
       logo: undefined,
     },
   });
+
+  const [editingChannel, setEditingChannel] = React.useState<Channel | null>(null);
+  const editChannelForm = useForm({
+    resolver: zodResolver(insertChannelSchema),
+    defaultValues: {
+      name: "",
+      subscribers: 0,
+      inviteLink: "",
+      description: "",
+      logo: undefined,
+    },
+  });
+
+  // Reset edit form when channel changes
+  React.useEffect(() => {
+    if (editingChannel) {
+      editChannelForm.reset({
+        name: editingChannel.name,
+        subscribers: editingChannel.subscribers,
+        inviteLink: editingChannel.inviteLink,
+        description: editingChannel.description || "",
+      });
+    }
+  }, [editingChannel]);
 
   const createChannelMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -67,6 +92,61 @@ export default function Dashboard() {
     },
   });
 
+  const editChannelMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
+      const res = await fetch(`/api/channels/${id}`, {
+        method: "PATCH",
+        body: data,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
+      toast({
+        title: "Channel updated",
+        description: "Your landing page has been updated successfully.",
+      });
+      setEditingChannel(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteChannelMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/channels/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
+      toast({
+        title: "Channel deleted",
+        description: "Your landing page has been deleted successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmitChannel = (data: any) => {
     const formData = new FormData();
     formData.append("name", data.name);
@@ -82,6 +162,25 @@ export default function Dashboard() {
     }
 
     createChannelMutation.mutate(formData);
+  };
+
+  const onEditChannel = (data: any) => {
+    if (!editingChannel) return;
+
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("subscribers", String(data.subscribers));
+    formData.append("inviteLink", data.inviteLink);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+
+    const logoFiles = (data.logo as FileList);
+    if (logoFiles && logoFiles.length > 0) {
+      formData.append("logo", logoFiles[0]);
+    }
+
+    editChannelMutation.mutate({ id: editingChannel.id, data: formData });
   };
 
   if (isLoading) {
@@ -208,14 +307,76 @@ export default function Dashboard() {
                     >
                       Copy URL
                     </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setEditingChannel(channel)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Channel Landing Page</DialogTitle>
+                        </DialogHeader>
+                        <form
+                          onSubmit={editChannelForm.handleSubmit(onEditChannel)}
+                          className="space-y-4"
+                        >
+                          <div>
+                            <Label htmlFor="name">Channel Name</Label>
+                            <Input {...editChannelForm.register("name")} />
+                          </div>
+                          <div>
+                            <Label htmlFor="subscribers">Subscribers</Label>
+                            <Input type="number" {...editChannelForm.register("subscribers")} />
+                          </div>
+                          <div>
+                            <Label htmlFor="logo">Channel Logo</Label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              {...editChannelForm.register("logo")}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="inviteLink">Telegram Invite Link</Label>
+                            <Input {...editChannelForm.register("inviteLink")} />
+                          </div>
+                          <div>
+                            <Label htmlFor="description">Description (Optional)</Label>
+                            <Textarea
+                              {...editChannelForm.register("description")}
+                              rows={6}
+                            />
+                          </div>
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={editChannelMutation.isPending}
+                          >
+                            {editChannelMutation.isPending && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Save Changes
+                          </Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() =>
-                        window.open(`/channels/${channel.uuid}`, "_blank")
-                      }
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete this channel?")) {
+                          deleteChannelMutation.mutate(channel.id);
+                        }
+                      }}
                     >
-                      Preview
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
                     </Button>
                   </div>
                 </CardContent>
