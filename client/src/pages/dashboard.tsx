@@ -164,10 +164,12 @@ export default function Dashboard() {
               <BarChart className="h-4 w-4 mr-2" />
               Channels
             </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Pixel Settings
-            </TabsTrigger>
+            {user?.role !== "admin" && (
+              <TabsTrigger value="settings">
+                <Settings className="h-4 w-4 mr-2" />
+                Pixel Settings
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="channels" className="space-y-6">
@@ -278,40 +280,42 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Facebook Pixel Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form
-                  onSubmit={pixelSettingsForm.handleSubmit(onSubmitPixelSettings)}
-                  className="space-y-4"
-                >
-                  <div>
-                    <Label htmlFor="pixelId">Pixel ID</Label>
-                    <Input {...pixelSettingsForm.register("pixelId")} />
-                  </div>
-                  <div>
-                    <Label htmlFor="accessToken">Access Token</Label>
-                    <Input
-                      type="password"
-                      {...pixelSettingsForm.register("accessToken")}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={updatePixelSettingsMutation.isPending}
+          {user?.role !== "admin" && (
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Facebook Pixel Settings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    onSubmit={pixelSettingsForm.handleSubmit(onSubmitPixelSettings)}
+                    className="space-y-4"
                   >
-                    {updatePixelSettingsMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Save Settings
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    <div>
+                      <Label htmlFor="pixelId">Pixel ID</Label>
+                      <Input {...pixelSettingsForm.register("pixelId")} />
+                    </div>
+                    <div>
+                      <Label htmlFor="accessToken">Access Token</Label>
+                      <Input
+                        type="password"
+                        {...pixelSettingsForm.register("accessToken")}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={updatePixelSettingsMutation.isPending}
+                    >
+                      {updatePixelSettingsMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Save Settings
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
