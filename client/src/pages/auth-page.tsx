@@ -37,14 +37,19 @@ export default function AuthPage() {
           </CardHeader>
           <CardContent>
             <form
-              onSubmit={loginForm.handleSubmit((data) =>
-                loginMutation.mutate(data),
-              )}
+              onSubmit={loginForm.handleSubmit((data) => {
+                loginMutation.mutate(data);
+              })}
               className="space-y-4"
             >
               <div>
                 <Label htmlFor="username">Username</Label>
                 <Input {...loginForm.register("username")} />
+                {loginForm.formState.errors.username && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {loginForm.formState.errors.username.message}
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="password">Password</Label>
@@ -67,6 +72,11 @@ export default function AuthPage() {
                     )}
                   </Button>
                 </div>
+                {loginForm.formState.errors.password && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {loginForm.formState.errors.password.message}
+                  </p>
+                )}
               </div>
               <Button
                 type="submit"
@@ -78,6 +88,11 @@ export default function AuthPage() {
                 )}
                 Login
               </Button>
+              {loginMutation.isError && (
+                <p className="text-sm text-red-500 text-center">
+                  {loginMutation.error.message}
+                </p>
+              )}
             </form>
           </CardContent>
         </Card>
