@@ -15,7 +15,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  createChannel(channel: InsertChannel, userId: number, logoFile: File): Promise<Channel>;
+  createChannel(channel: InsertChannel, userId: number, logoFile: Express.Multer.File): Promise<Channel>;
   getChannel(uuid: string): Promise<Channel | undefined>;
   getUserChannels(userId: number): Promise<Channel[]>;
 
@@ -47,17 +47,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createChannel(insertChannel: InsertChannel, userId: number, logoFile: File): Promise<Channel> {
+  async createChannel(insertChannel: InsertChannel, userId: number, logoFile: Express.Multer.File): Promise<Channel> {
     // Save logo file
     const uuid = randomUUID();
-    const filename = `${uuid}-${logoFile.name}`;
+    const filename = `${uuid}-${logoFile.originalname}`;
     const uploadDir = join(process.cwd(), 'uploads', 'logos');
     await mkdir(uploadDir, { recursive: true });
 
     const logoPath = join(uploadDir, filename);
-    const arrayBuffer = await logoFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    await writeFile(logoPath, buffer);
+    await writeFile(logoPath, logoFile.buffer);
 
     const logoUrl = `/uploads/logos/${filename}`;
 
