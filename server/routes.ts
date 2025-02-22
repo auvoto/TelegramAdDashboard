@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Track subscribe events with user-specific pixel settings
   app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
     try {
-      console.log('Tracking channel view event for:', req.params.uuid);
+      console.log('Tracking channel contact event for:', req.params.uuid);
 
       const channel = await storage.getChannel(req.params.uuid);
       if (!channel) {
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         body: JSON.stringify({
           data: [{
-            event_name: 'ViewContent',
+            event_name: 'Contact',
             event_time: Math.floor(Date.now() / 1000),
             action_source: 'website',
             event_source_url: req.headers.referer || '',

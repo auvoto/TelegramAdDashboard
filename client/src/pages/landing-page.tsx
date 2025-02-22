@@ -60,7 +60,7 @@ export default function LandingPage() {
     try {
       // Track both client and server side for redundancy
       if (window.fbq) {
-        window.fbq("track", "ViewContent", {
+        window.fbq("track", "Contact", {
           content_name: channelQuery.data?.name,
           content_type: 'channel',
           content_ids: [uuid]
