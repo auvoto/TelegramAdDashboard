@@ -184,6 +184,7 @@ export default function Dashboard() {
       }
     },
     onSuccess: () => {
+      // Invalidate and refetch channels query to update UI
       queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
       toast({
         title: "Channel deleted",
