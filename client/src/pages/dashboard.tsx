@@ -71,10 +71,17 @@ export default function Dashboard() {
   const onSubmit = (data: any) => {
     const formData = new FormData();
     formData.append("name", data.name);
-    formData.append("subscribers", data.subscribers.toString());
+    formData.append("subscribers", String(data.subscribers));
     formData.append("inviteLink", data.inviteLink);
-    formData.append("description", data.description || "");
-    formData.append("logo", data.logo[0]);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+
+    // Check if there's a file selected
+    const logoFiles = (data.logo as FileList);
+    if (logoFiles && logoFiles.length > 0) {
+      formData.append("logo", logoFiles[0]);
+    }
 
     createChannelMutation.mutate(formData);
   };
@@ -116,10 +123,10 @@ export default function Dashboard() {
               </div>
               <div>
                 <Label htmlFor="logo">Channel Logo</Label>
-                <Input 
-                  type="file" 
+                <Input
+                  type="file"
                   accept="image/*"
-                  {...form.register("logo")} 
+                  {...form.register("logo")}
                 />
               </div>
               <div>
@@ -128,8 +135,8 @@ export default function Dashboard() {
               </div>
               <div>
                 <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea 
-                  {...form.register("description")} 
+                <Textarea
+                  {...form.register("description")}
                   placeholder="👨🏻‍🏫 Start Your Profitable Journey with NISM Registered research analyst&#10;&#10;India's Best Channel For Option Trading&#10;&#10;✅ 👇🏻Click on the below link Before it Expires 👇🏻"
                   rows={6}
                 />
