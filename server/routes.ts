@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertChannelSchema, insertPixelSettingsSchema } from "@shared/schema";
+import { insertChannelSchema } from "@shared/schema";
 import multer from "multer";
 import { join } from "path";
 import express from 'express';
@@ -45,34 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pixel settings routes
-  app.get("/api/pixel-settings", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const settings = await storage.getPixelSettings(req.user.id);
-    res.json(settings);
-  });
-
-  app.post("/api/pixel-settings", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    try {
-      const settingsData = insertPixelSettingsSchema.parse(req.body);
-      const existingSettings = await storage.getPixelSettings(req.user.id);
-
-      let settings;
-      if (existingSettings) {
-        settings = await storage.updatePixelSettings(req.user.id, settingsData);
-      } else {
-        settings = await storage.createPixelSettings(settingsData, req.user.id);
-      }
-
-      res.json(settings);
-    } catch (error) {
-      console.error('Pixel settings error:', error);
-      res.status(400).json({ error: String(error) });
-    }
-  });
-
+  // Channel management routes
   app.post("/api/channels", upload.single('logo'), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.file) return res.status(400).json({ error: "Logo file is required" });
@@ -103,57 +76,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const channel = await storage.getChannel(req.params.uuid);
     if (!channel) return res.sendStatus(404);
     res.json(channel);
-  });
-
-  // Track subscribe events with user-specific pixel settings
-  app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
-    try {
-      const channel = await storage.getChannel(req.params.uuid);
-      if (!channel) return res.sendStatus(404);
-
-      const pixelSettings = await storage.getPixelSettings(channel.userId);
-      if (!pixelSettings) {
-        console.error('Pixel settings not found');
-        return res.sendStatus(500);
-      }
-
-      // Track event using Facebook Conversion API with user-specific settings
-      const response = await fetch(`https://graph.facebook.com/v18.0/${pixelSettings.pixelId}/events`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pixelSettings.accessToken}`
-        },
-        body: JSON.stringify({
-          data: [{
-            event_name: 'Subscribe',
-            event_time: Math.floor(Date.now() / 1000),
-            action_source: 'website',
-            user_data: {
-              client_ip_address: req.ip,
-              client_user_agent: req.headers['user-agent'],
-            },
-            custom_data: {
-              content_name: channel.name,
-              channel_uuid: channel.uuid
-            }
-          }],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Facebook API Error:', errorText);
-        return res.status(500).json({ error: 'Failed to track event' });
-      }
-
-      const responseData = await response.json();
-      console.log('Facebook API Response:', responseData);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error tracking subscribe event:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
   });
 
   const httpServer = createServer(app);
