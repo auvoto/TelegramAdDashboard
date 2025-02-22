@@ -15,6 +15,7 @@ export const channels = pgTable("channels", {
   subscribers: integer("subscribers").notNull(),
   logo: text("logo").notNull(),
   inviteLink: text("invite_link").notNull(),
+  description: text("description").default("👨🏻‍🏫 Start Your Profitable Journey with NISM Registered research analyst\n\nIndia's Best Channel For Option Trading\n\n✅ 👇🏻Click on the below link Before it Expires 👇🏻"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: integer("user_id").notNull(),
 });
@@ -28,11 +29,14 @@ export const insertChannelSchema = createInsertSchema(channels)
   .pick({
     name: true,
     subscribers: true, 
-    logo: true,
     inviteLink: true,
+    description: true,
+    logo:true
   })
   .extend({
     subscribers: z.coerce.number().min(0),
+    description: z.string().optional(),
+    logo: z.any(), //This is a placeholder, needs further refinement based on the actual File type.
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

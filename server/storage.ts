@@ -5,6 +5,8 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { randomUUID } from "node:crypto";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -13,7 +15,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  createChannel(channel: InsertChannel, userId: number): Promise<Channel>;
+  createChannel(channel: InsertChannel, userId: number, logoFile: File): Promise<Channel>;
   getChannel(uuid: string): Promise<Channel | undefined>;
   getUserChannels(userId: number): Promise<Channel[]>;
 
@@ -45,14 +47,27 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createChannel(insertChannel: InsertChannel, userId: number): Promise<Channel> {
+  async createChannel(insertChannel: InsertChannel, userId: number, logoFile: File): Promise<Channel> {
+    // Save logo file
     const uuid = randomUUID();
+    const filename = `${uuid}-${logoFile.name}`;
+    const uploadDir = join(process.cwd(), 'uploads', 'logos');
+    await mkdir(uploadDir, { recursive: true });
+
+    const logoPath = join(uploadDir, filename);
+    const arrayBuffer = await logoFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    await writeFile(logoPath, buffer);
+
+    const logoUrl = `/uploads/logos/${filename}`;
+
     const [channel] = await db
       .insert(channels)
       .values({ 
         ...insertChannel, 
         userId,
-        uuid 
+        uuid,
+        logo: logoUrl,
       })
       .returning();
     return channel;

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,14 +33,22 @@ export default function Dashboard() {
     defaultValues: {
       name: "",
       subscribers: 0,
-      logo: "",
       inviteLink: "",
+      description: "",
+      logo: undefined,
     },
   });
 
   const createChannelMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/channels", data);
+    mutationFn: async (data: FormData) => {
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        body: data,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -58,6 +67,17 @@ export default function Dashboard() {
       });
     },
   });
+
+  const onSubmit = (data: any) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("subscribers", data.subscribers.toString());
+    formData.append("inviteLink", data.inviteLink);
+    formData.append("description", data.description || "");
+    formData.append("logo", data.logo[0]);
+
+    createChannelMutation.mutate(formData);
+  };
 
   if (channelsQuery.isLoading) {
     return (
@@ -83,9 +103,7 @@ export default function Dashboard() {
               <DialogTitle>Create New Channel Landing Page</DialogTitle>
             </DialogHeader>
             <form
-              onSubmit={form.handleSubmit((data) =>
-                createChannelMutation.mutate(data),
-              )}
+              onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-4"
             >
               <div>
@@ -97,12 +115,24 @@ export default function Dashboard() {
                 <Input type="number" {...form.register("subscribers")} />
               </div>
               <div>
-                <Label htmlFor="logo">Logo URL</Label>
-                <Input {...form.register("logo")} />
+                <Label htmlFor="logo">Channel Logo</Label>
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  {...form.register("logo")} 
+                />
               </div>
               <div>
                 <Label htmlFor="inviteLink">Telegram Invite Link</Label>
                 <Input {...form.register("inviteLink")} />
+              </div>
+              <div>
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea 
+                  {...form.register("description")} 
+                  placeholder="👨🏻‍🏫 Start Your Profitable Journey with NISM Registered research analyst&#10;&#10;India's Best Channel For Option Trading&#10;&#10;✅ 👇🏻Click on the below link Before it Expires 👇🏻"
+                  rows={6}
+                />
               </div>
               <Button
                 type="submit"
