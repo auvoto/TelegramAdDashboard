@@ -109,57 +109,57 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold">Team Management</h1>
-            <div className="ml-auto">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Member
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Team Member</DialogTitle>
-                  </DialogHeader>
-                  <form
-                    onSubmit={createUserForm.handleSubmit((data) =>
-                      createUserMutation.mutate(data),
-                    )}
-                    className="space-y-4"
-                  >
-                    <div>
-                      <Label htmlFor="username">Username</Label>
-                      <Input {...createUserForm.register("username")} />
-                    </div>
-                    <div>
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        type="password"
-                        {...createUserForm.register("password")}
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={createUserMutation.isPending}
-                    >
-                      {createUserMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Create Member
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="ghost">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+              <h1 className="text-xl font-bold">Team Management</h1>
             </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Member
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Team Member</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={createUserForm.handleSubmit((data) =>
+                    createUserMutation.mutate(data)
+                  )}
+                  className="space-y-4"
+                >
+                  <div>
+                    <Label htmlFor="username">Username</Label>
+                    <Input {...createUserForm.register("username")} />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      type="password"
+                      {...createUserForm.register("password")}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={createUserMutation.isPending}
+                  >
+                    {createUserMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Create Member
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
