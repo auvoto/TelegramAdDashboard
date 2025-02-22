@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -40,6 +41,8 @@ export default function Dashboard() {
   });
 
   const [editingChannel, setEditingChannel] = React.useState<Channel | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+
   const editChannelForm = useForm({
     resolver: zodResolver(insertChannelSchema),
     defaultValues: {
@@ -111,6 +114,7 @@ export default function Dashboard() {
         description: "Your landing page has been updated successfully.",
       });
       setEditingChannel(null);
+      setIsEditDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -231,6 +235,9 @@ export default function Dashboard() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create New Channel Landing Page</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details below to create a new landing page for your Telegram channel.
+                  </DialogDescription>
                 </DialogHeader>
                 <form
                   onSubmit={channelForm.handleSubmit(onSubmitChannel)}
@@ -239,10 +246,20 @@ export default function Dashboard() {
                   <div>
                     <Label htmlFor="name">Channel Name</Label>
                     <Input {...channelForm.register("name")} />
+                    {channelForm.formState.errors.name && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {channelForm.formState.errors.name.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="subscribers">Subscribers</Label>
                     <Input type="number" {...channelForm.register("subscribers")} />
+                    {channelForm.formState.errors.subscribers && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {channelForm.formState.errors.subscribers.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="logo">Channel Logo</Label>
@@ -255,6 +272,11 @@ export default function Dashboard() {
                   <div>
                     <Label htmlFor="inviteLink">Telegram Invite Link</Label>
                     <Input {...channelForm.register("inviteLink")} />
+                    {channelForm.formState.errors.inviteLink && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {channelForm.formState.errors.inviteLink.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="description">Description (Optional)</Label>
@@ -307,12 +329,15 @@ export default function Dashboard() {
                     >
                       Copy URL
                     </Button>
-                    <Dialog>
+                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                       <DialogTrigger asChild>
                         <Button 
                           variant="outline"
                           className="flex-1"
-                          onClick={() => setEditingChannel(channel)}
+                          onClick={() => {
+                            setEditingChannel(channel);
+                            setIsEditDialogOpen(true);
+                          }}
                         >
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
@@ -321,6 +346,9 @@ export default function Dashboard() {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Edit Channel Landing Page</DialogTitle>
+                          <DialogDescription>
+                            Update the details of your channel landing page.
+                          </DialogDescription>
                         </DialogHeader>
                         <form
                           onSubmit={editChannelForm.handleSubmit(onEditChannel)}
@@ -329,10 +357,20 @@ export default function Dashboard() {
                           <div>
                             <Label htmlFor="name">Channel Name</Label>
                             <Input {...editChannelForm.register("name")} />
+                            {editChannelForm.formState.errors.name && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {editChannelForm.formState.errors.name.message}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <Label htmlFor="subscribers">Subscribers</Label>
                             <Input type="number" {...editChannelForm.register("subscribers")} />
+                            {editChannelForm.formState.errors.subscribers && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {editChannelForm.formState.errors.subscribers.message}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <Label htmlFor="logo">Channel Logo</Label>
@@ -345,6 +383,11 @@ export default function Dashboard() {
                           <div>
                             <Label htmlFor="inviteLink">Telegram Invite Link</Label>
                             <Input {...editChannelForm.register("inviteLink")} />
+                            {editChannelForm.formState.errors.inviteLink && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {editChannelForm.formState.errors.inviteLink.message}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <Label htmlFor="description">Description (Optional)</Label>
