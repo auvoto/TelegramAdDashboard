@@ -2,12 +2,63 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Channel } from "@shared/schema";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+
+declare global {
+  interface Window {
+    fbq: any;
+  }
+}
 
 export default function LandingPage() {
   const { uuid } = useParams();
   const channelQuery = useQuery<Channel>({
     queryKey: [`/api/channels/${uuid}`],
   });
+
+  useEffect(() => {
+    // Initialize Facebook Pixel
+    const script = document.createElement('script');
+    script.innerHTML = `
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '485785431234952');
+      fbq('track', 'PageView');
+    `;
+    document.head.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    if (!channelQuery.data) return;
+
+    // Track channel view
+    if (window.fbq) {
+      window.fbq('track', 'ViewContent', {
+        content_name: channelQuery.data.name
+      });
+    }
+
+    // Setup countdown
+    const countdownElement = document.getElementById('countdown');
+    let countdownTime = 10;
+
+    function updateCountdown() {
+      if (!countdownElement) return;
+      countdownElement.textContent = `Invitation closes in ${countdownTime}s`;
+      if (countdownTime > 0) {
+        countdownTime--;
+        setTimeout(updateCountdown, 1000);
+      }
+    }
+
+    updateCountdown();
+  }, [channelQuery.data]);
 
   if (channelQuery.isLoading) {
     return (
@@ -24,111 +75,63 @@ export default function LandingPage() {
   const channel = channelQuery.data;
 
   return (
-    <div>
-      <style jsx>{`
-        body {
-          font-family: Arial, sans-serif;
-          margin: 0;
-          padding: 0;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          background-color: #f8f9fa;
-          text-align: center;
-        }
+    <div className="min-h-screen bg-[#f8f9fa] font-sans text-center">
+      <style>
+        {`
+          .telegram-link {
+            background-color: #0088cc;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+          }
 
-        .container {
-          background-color: white;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-          max-width: 500px;
-          width: 90%;
-        }
+          .telegram-link:hover {
+            background-color: #006699;
+          }
 
-        .telegram-link {
-          background-color: #0088cc;
-          color: white;
-          padding: 10px;
-          border-radius: 5px;
-          text-decoration: none;
-          display: inline-block;
-          margin-top: 10px;
-        }
+          .icon {
+            border-radius: 50%;
+            margin-top: 20px;
+            width: 100px;
+            height: 100px;
+          }
 
-        .telegram-link:hover {
-          background-color: #006699;
-        }
+          .countdown {
+            font-size: 1.5em;
+            margin: 10px 0;
+            color: red;
+          }
+        `}
+      </style>
 
-        .header {
-          background-color: #00AEEF;
-          color: white;
-          padding: 10px;
-        }
+      <div className="bg-[#00AEEF] text-white p-3">
+        Don't have{" "}
+        <strong>
+          <a
+            href="https://web.telegram.org/k/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white"
+          >
+            Telegram
+          </a>
+        </strong>{" "}
+        yet? Try it now!
+      </div>
 
-        .icon {
-          border-radius: 50%;
-          margin-top: 20px;
-          width: 100px;
-          height: 100px;
-        }
-
-        .emoji {
-          font-size: 1.5em;
-        }
-
-        .note {
-          color: gray;
-          font-size: 0.9em;
-          margin-top: 20px;
-        }
-
-        .maintained {
-          margin-top: 30px;
-          color: gray;
-          font-size: 0.9em;
-        }
-
-        .maintained a {
-          color: #007BFF;
-          text-decoration: none;
-        }
-
-        .maintained a:hover {
-          text-decoration: underline;
-        }
-
-        .countdown {
-          font-size: 1.5em;
-          margin: 10px 0;
-          color: red;
-        }
-      `}</style>
-
-      <div className="container">
-        <div className="header">
-          Don't have{" "}
-          <strong>
-            <a
-              href="https://web.telegram.org/k/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Telegram
-            </a>
-          </strong>{" "}
-          yet? Try it now!
-        </div>
-
-        <img src={channel.logo} alt={channel.name} className="icon" />
-        <h1 className="avitr-t-name">
-          <img src={channel.logo} alt={channel.name} /> {channel.name}
+      <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
+        <img src={channel.logo} alt={channel.name} className="icon mx-auto" />
+        <h1 className="text-2xl font-bold mt-4">
+          <img src={channel.logo} alt={channel.name} className="hidden w-6 h-6 rounded-full" /> {channel.name}
         </h1>
-        <p style={{ marginTop: 0, paddingTop: 0 }}>
-          <small className="text-gray">{channel.subscribers} subscribers</small>
+        <p className="mt-0 text-gray-500">
+          <small>{channel.subscribers} subscribers</small>
         </p>
-        <p>
-          <span className="emoji">👨🏻‍🏫</span> Start Your Profitable Journey with NISM
+        <p className="mt-4">
+          <span className="text-2xl">👨🏻‍🏫</span> Start Your Profitable Journey with NISM
           Registered research analyst
         </p>
         <p>India's Best Channel For Option Trading</p>
@@ -144,39 +147,30 @@ export default function LandingPage() {
         >
           VIEW IN TELEGRAM
         </a>
-        <p className="note">
+        <p className="text-gray-600 text-sm mt-5">
           If you have Telegram you can view and join {channel.name} right away.
         </p>
-        <div className="maintained">
+        <div className="text-gray-500 text-sm mt-8">
           Maintained by{" "}
           <a
             href="https://metabulluniverse.digital/contact"
             target="_blank"
             rel="noopener noreferrer"
+            className="text-[#007BFF] hover:underline"
           >
             Meta Bull Universe
           </a>
         </div>
       </div>
 
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            let countdownElement = document.getElementById('countdown');
-            let countdownTime = 10;
-
-            function updateCountdown() {
-                countdownElement.textContent = \`Invitation closes in \${countdownTime}s\`;
-                if (countdownTime > 0) {
-                    countdownTime--;
-                    setTimeout(updateCountdown, 1000);
-                }
-            }
-
-            updateCountdown();
-          `,
-        }}
-      />
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{ display: 'none' }}
+          src="https://www.facebook.com/tr?id=485785431234952&ev=PageView&noscript=1"
+        />
+      </noscript>
     </div>
   );
 }

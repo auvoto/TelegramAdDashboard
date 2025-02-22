@@ -29,10 +29,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const channel = await storage.getChannel(req.params.uuid);
     if (!channel) return res.sendStatus(404);
     res.json(channel);
-
-    // Send FB conversion event
-    const fbq = `fbq('track', 'ViewContent', {content_name: '${channel.name}'});`;
-    res.write(`<script>${fbq}</script>`);
   });
 
   const httpServer = createServer(app);
