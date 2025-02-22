@@ -109,14 +109,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Track subscribe events with user-specific pixel settings
   app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
     try {
+      console.log('Tracking subscribe event for channel:', req.params.uuid);
+
       const channel = await storage.getChannel(req.params.uuid);
-      if (!channel) return res.sendStatus(404);
+      if (!channel) {
+        console.error('Channel not found:', req.params.uuid);
+        return res.sendStatus(404);
+      }
+
+      console.log('Found channel:', channel.name, 'userId:', channel.userId);
 
       const pixelSettings = await storage.getPixelSettings(channel.userId);
       if (!pixelSettings) {
-        console.error('Pixel settings not found');
-        return res.sendStatus(500);
+        console.error('Pixel settings not found for userId:', channel.userId);
+        return res.status(500).json({ error: 'Pixel settings not configured' });
       }
+
+      console.log('Found pixel settings:', { 
+        pixelId: pixelSettings.pixelId,
+        hasAccessToken: !!pixelSettings.accessToken 
+      });
 
       // Track event using Facebook Conversion API with user-specific settings
       const response = await fetch(`https://graph.facebook.com/v18.0/${pixelSettings.pixelId}/events`, {
@@ -131,8 +143,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             event_time: Math.floor(Date.now() / 1000),
             action_source: 'website',
             user_data: {
-              client_ip_address: req.ip,
-              client_user_agent: req.headers['user-agent'],
+              client_ip_address: req.ip || '',
+              client_user_agent: req.headers['user-agent'] || '',
             },
             custom_data: {
               content_name: channel.name,
@@ -144,8 +156,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Facebook API Error:', errorText);
-        return res.status(500).json({ error: 'Failed to track event' });
+        console.error('Facebook API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        return res.status(500).json({ 
+          error: 'Failed to track event',
+          details: errorText
+        });
       }
 
       const responseData = await response.json();
@@ -153,7 +172,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error('Error tracking subscribe event:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
