@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import { Channel } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { initFacebookPixel, trackPageView, trackSubscribe } from "@/lib/facebook-pixel";
 
 declare global {
   interface Window {
@@ -18,21 +18,9 @@ export default function LandingPage() {
   });
 
   useEffect(() => {
-    // Initialize Facebook Pixel (keep client-side tracking as fallback)
-    const script = document.createElement("script");
-    script.innerHTML = `
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '520700944254644');
-      fbq('track', 'PageView');
-    `;
-    document.head.appendChild(script);
+    // Initialize Facebook Pixel
+    initFacebookPixel('520700944254644'); // Your Facebook Pixel ID
+    trackPageView();
   }, []);
 
   useEffect(() => {
@@ -69,23 +57,9 @@ export default function LandingPage() {
 
     try {
       // Track subscribe event server-side
-      await fetch(`/api/channels/${uuid}/track-subscribe`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      // Keep client-side tracking as fallback
-      if (window.fbq) {
-        window.fbq("track", "Subscribe", {
-          content_name: channelQuery.data?.name,
-        });
-      }
+      await trackSubscribe(uuid!);
     } catch (error) {
       console.error("Failed to track subscribe event:", error);
-      // Continue with redirect even if tracking fails
     }
 
     // Open link in new tab
@@ -108,37 +82,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-sans text-center">
-      <style>
-        {`
-          .telegram-link {
-            background-color: #0088cc;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 10px;
-          }
-
-          .telegram-link:hover {
-            background-color: #006699;
-          }
-
-          .icon {
-            border-radius: 50%;
-            margin-top: 20px;
-            width: 100px;
-            height: 100px;
-          }
-
-          .countdown {
-            font-size: 1.5em;
-            margin: 10px 0;
-            color: red;
-          }
-        `}
-      </style>
-
       <div className="bg-[#00AEEF] text-white p-3">
         Don't have{" "}
         <strong>
@@ -158,11 +101,6 @@ export default function LandingPage() {
       <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
         <img src={channel.logo} alt={channel.name} className="icon mx-auto" />
         <h1 className="text-2xl font-bold mt-4">
-          <img
-            src={channel.logo}
-            alt={channel.name}
-            className="hidden w-6 h-6 rounded-full"
-          />{" "}
           {channel.name}
         </h1>
         <p className="mt-0 text-gray-500">
@@ -183,25 +121,40 @@ export default function LandingPage() {
         <p className="text-gray-600 text-sm mt-5">
           If you have Telegram you can view and join {channel.name} right away.
         </p>
-        <div className="text-gray-500 text-sm mt-8">
-          Maintained by{" "}
-          <a
-            href="https://metabulluniverse.digital/contact"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#007BFF] hover:underline"
-          >
-            Meta Bull Universe
-          </a>
-        </div>
       </div>
+
+      <style jsx>{`
+        .icon {
+          border-radius: 50%;
+          margin-top: 20px;
+          width: 100px;
+          height: 100px;
+        }
+        .telegram-link {
+          background-color: #0088cc;
+          color: white;
+          padding: 10px;
+          border-radius: 5px;
+          text-decoration: none;
+          display: inline-block;
+          margin-top: 10px;
+        }
+        .telegram-link:hover {
+          background-color: #006699;
+        }
+        .countdown {
+          font-size: 1.5em;
+          margin: 10px 0;
+          color: red;
+        }
+      `}</style>
 
       <noscript>
         <img
           height="1"
           width="1"
           style={{ display: "none" }}
-          src="https://www.facebook.com/tr?id=485785431234952&ev=PageView&noscript=1"
+          src="https://www.facebook.com/tr?id=520700944254644&ev=PageView&noscript=1"
         />
       </noscript>
     </div>
