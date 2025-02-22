@@ -51,6 +51,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(channel);
   });
 
+  // New endpoint to track subscribe events
+  app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
+    const channel = await storage.getChannel(req.params.uuid);
+    if (!channel) return res.sendStatus(404);
+
+    // Track event using Facebook Conversion API
+    try {
+      const response = await fetch('https://graph.facebook.com/v18.0/485785431234952/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: [{
+            event_name: 'Subscribe',
+            event_time: Math.floor(Date.now() / 1000),
+            action_source: 'website',
+            user_data: {
+              client_ip_address: req.ip,
+              client_user_agent: req.headers['user-agent'],
+            },
+            custom_data: {
+              content_name: channel.name,
+            }
+          }],
+          access_token: process.env.FACEBOOK_ACCESS_TOKEN,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to track event');
+      }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error tracking subscribe event:', error);
+      res.sendStatus(500);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

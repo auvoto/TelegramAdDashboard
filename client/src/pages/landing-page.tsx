@@ -3,6 +3,7 @@ import { useParams } from "wouter";
 import { Channel } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 declare global {
   interface Window {
@@ -17,7 +18,7 @@ export default function LandingPage() {
   });
 
   useEffect(() => {
-    // Initialize Facebook Pixel
+    // Initialize Facebook Pixel (keep client-side tracking as fallback)
     const script = document.createElement('script');
     script.innerHTML = `
       !function(f,b,e,v,n,t,s)
@@ -59,6 +60,31 @@ export default function LandingPage() {
 
     updateCountdown();
   }, [channelQuery.data]);
+
+  const handleTelegramClick = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const link = event.currentTarget.href;
+
+    try {
+      // Track subscribe event server-side
+      await apiRequest(`/api/channels/${uuid}/track-subscribe`, {
+        method: 'POST',
+      });
+
+      // Keep client-side tracking as fallback
+      if (window.fbq) {
+        window.fbq('track', 'Subscribe', {
+          content_name: channelQuery.data?.name
+        });
+      }
+    } catch (error) {
+      console.error('Failed to track subscribe event:', error);
+      // Continue with redirect even if tracking fails
+    }
+
+    // Open link in new tab
+    window.open(link, '_blank');
+  };
 
   if (channelQuery.isLoading) {
     return (
@@ -115,6 +141,7 @@ export default function LandingPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-white"
+            onClick={handleTelegramClick}
           >
             Telegram
           </a>
@@ -130,19 +157,14 @@ export default function LandingPage() {
         <p className="mt-0 text-gray-500">
           <small>{channel.subscribers} subscribers</small>
         </p>
-        <p className="mt-4">
-          <span className="text-2xl">👨🏻‍🏫</span> Start Your Profitable Journey with NISM
-          Registered research analyst
-        </p>
-        <p>India's Best Channel For Option Trading</p>
-        <p>✅ 👇🏻Click on the below link Before it Expires 👇🏻</p>
+        <p className="mt-4 whitespace-pre-line">{channel.description}</p>
         <div className="countdown" id="countdown">
           Invitation closes in 10s
         </div>
         <a
           href={channel.inviteLink}
           className="telegram-link"
-          target="_blank"
+          onClick={handleTelegramClick}
           rel="noopener noreferrer"
         >
           VIEW IN TELEGRAM
