@@ -4,7 +4,7 @@ import { Express } from "express";
 import session from "express-session";
 import { randomBytes } from "crypto";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, insertUserSchema } from "@shared/schema";
 
 declare global {
   namespace Express {
@@ -81,6 +81,35 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error('Deserialization error:', error);
       done(error);
+    }
+  });
+
+  // Add registration endpoint
+  app.post("/api/register", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.sendStatus(401);
+      }
+
+      if (req.user.role !== "admin") {
+        return res.sendStatus(403);
+      }
+
+      const userData = insertUserSchema.parse(req.body);
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+
+      // Create new user
+      const user = await storage.createUser(userData);
+      console.log('User created successfully:', user);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(400).json({ error: String(error) });
     }
   });
 
