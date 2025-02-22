@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,20 +20,18 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import React from 'react';
 
+// Edit Channel Dialog Component
 function EditChannelDialog({ 
   channel, 
   isOpen, 
-  onOpenChange, 
-  onEditSuccess 
+  onOpenChange
 }: { 
   channel: Channel | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onEditSuccess: () => void;
 }) {
   const { toast } = useToast();
-
-  const editChannelForm = useForm({
+  const form = useForm({
     resolver: zodResolver(insertChannelSchema),
     defaultValues: {
       name: "",
@@ -45,17 +42,17 @@ function EditChannelDialog({
     },
   });
 
-  // Reset form when channel or open state changes
+  // Reset form when channel or dialog state changes
   React.useEffect(() => {
     if (channel && isOpen) {
-      editChannelForm.reset({
+      form.reset({
         name: channel.name,
         subscribers: channel.subscribers,
         inviteLink: channel.inviteLink,
         description: channel.description || "",
       });
     }
-  }, [channel, isOpen]);
+  }, [channel, isOpen, form]);
 
   const editChannelMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -76,7 +73,6 @@ function EditChannelDialog({
         title: "Channel updated",
         description: "Your landing page has been updated successfully.",
       });
-      onEditSuccess();
       onOpenChange(false);
     },
     onError: (error: Error) => {
@@ -88,7 +84,7 @@ function EditChannelDialog({
     },
   });
 
-  const onEditChannel = (data: any) => {
+  const onSubmit = (data: any) => {
     if (!channel) return;
 
     const formData = new FormData();
@@ -112,7 +108,7 @@ function EditChannelDialog({
       open={isOpen} 
       onOpenChange={(open) => {
         if (!open) {
-          editChannelForm.reset();
+          form.reset();
         }
         onOpenChange(open);
       }}
@@ -124,25 +120,22 @@ function EditChannelDialog({
             Update the details of your channel landing page.
           </DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={editChannelForm.handleSubmit(onEditChannel)}
-          className="space-y-4"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Label htmlFor="name">Channel Name</Label>
-            <Input {...editChannelForm.register("name")} />
-            {editChannelForm.formState.errors.name && (
+            <Input {...form.register("name")} />
+            {form.formState.errors.name && (
               <p className="text-sm text-red-500 mt-1">
-                {editChannelForm.formState.errors.name.message}
+                {form.formState.errors.name.message}
               </p>
             )}
           </div>
           <div>
             <Label htmlFor="subscribers">Subscribers</Label>
-            <Input type="number" {...editChannelForm.register("subscribers")} />
-            {editChannelForm.formState.errors.subscribers && (
+            <Input type="number" {...form.register("subscribers")} />
+            {form.formState.errors.subscribers && (
               <p className="text-sm text-red-500 mt-1">
-                {editChannelForm.formState.errors.subscribers.message}
+                {form.formState.errors.subscribers.message}
               </p>
             )}
           </div>
@@ -151,22 +144,22 @@ function EditChannelDialog({
             <Input
               type="file"
               accept="image/*"
-              {...editChannelForm.register("logo")}
+              {...form.register("logo")}
             />
           </div>
           <div>
             <Label htmlFor="inviteLink">Telegram Invite Link</Label>
-            <Input {...editChannelForm.register("inviteLink")} />
-            {editChannelForm.formState.errors.inviteLink && (
+            <Input {...form.register("inviteLink")} />
+            {form.formState.errors.inviteLink && (
               <p className="text-sm text-red-500 mt-1">
-                {editChannelForm.formState.errors.inviteLink.message}
+                {form.formState.errors.inviteLink.message}
               </p>
             )}
           </div>
           <div>
             <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
-              {...editChannelForm.register("description")}
+              {...form.register("description")}
               rows={6}
             />
           </div>
@@ -186,18 +179,16 @@ function EditChannelDialog({
   );
 }
 
-export default function Dashboard() {
+// Create Channel Dialog Component
+function CreateChannelDialog({
+  isOpen,
+  onOpenChange
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const { toast } = useToast();
-  const { user, isLoading } = useAuth();
-  const [editingChannel, setEditingChannel] = React.useState<Channel | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
-
-  const channelsQuery = useQuery<Channel[]>({
-    queryKey: ["/api/channels"],
-  });
-
-  const channelForm = useForm({
+  const form = useForm({
     resolver: zodResolver(insertChannelSchema),
     defaultValues: {
       name: "",
@@ -226,8 +217,8 @@ export default function Dashboard() {
         title: "Channel created",
         description: "Your landing page has been generated successfully.",
       });
-      channelForm.reset();
-      setIsCreateDialogOpen(false);
+      form.reset();
+      onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
@@ -236,6 +227,111 @@ export default function Dashboard() {
         variant: "destructive",
       });
     },
+  });
+
+  const onSubmit = (data: any) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("subscribers", String(data.subscribers));
+    formData.append("inviteLink", data.inviteLink);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+
+    const logoFiles = (data.logo as FileList);
+    if (logoFiles && logoFiles.length > 0) {
+      formData.append("logo", logoFiles[0]);
+    }
+
+    createChannelMutation.mutate(formData);
+  };
+
+  return (
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          form.reset();
+        }
+        onOpenChange(open);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Channel Landing Page</DialogTitle>
+          <DialogDescription>
+            Fill in the details below to create a new landing page for your Telegram channel.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Channel Name</Label>
+            <Input {...form.register("name")} />
+            {form.formState.errors.name && (
+              <p className="text-sm text-red-500 mt-1">
+                {form.formState.errors.name.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="subscribers">Subscribers</Label>
+            <Input type="number" {...form.register("subscribers")} />
+            {form.formState.errors.subscribers && (
+              <p className="text-sm text-red-500 mt-1">
+                {form.formState.errors.subscribers.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="logo">Channel Logo</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              {...form.register("logo")}
+            />
+          </div>
+          <div>
+            <Label htmlFor="inviteLink">Telegram Invite Link</Label>
+            <Input {...form.register("inviteLink")} />
+            {form.formState.errors.inviteLink && (
+              <p className="text-sm text-red-500 mt-1">
+                {form.formState.errors.inviteLink.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Textarea
+              {...form.register("description")}
+              rows={6}
+            />
+          </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={createChannelMutation.isPending}
+          >
+            {createChannelMutation.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Create Landing Page
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Main Dashboard Component
+export default function Dashboard() {
+  const { toast } = useToast();
+  const { user, isLoading } = useAuth();
+  const [editingChannel, setEditingChannel] = React.useState<Channel | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+
+  const channelsQuery = useQuery<Channel[]>({
+    queryKey: ["/api/channels"],
   });
 
   const deleteChannelMutation = useMutation({
@@ -263,23 +359,6 @@ export default function Dashboard() {
       });
     },
   });
-
-  const onSubmitChannel = (data: any) => {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("subscribers", String(data.subscribers));
-    formData.append("inviteLink", data.inviteLink);
-    if (data.description) {
-      formData.append("description", data.description);
-    }
-
-    const logoFiles = (data.logo as FileList);
-    if (logoFiles && logoFiles.length > 0) {
-      formData.append("logo", logoFiles[0]);
-    }
-
-    createChannelMutation.mutate(formData);
-  };
 
   if (isLoading) {
     return (
@@ -319,74 +398,10 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold">Your Channels</h2>
               <p className="text-gray-600">Manage your Telegram channel landing pages</p>
             </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Channel Landing Page</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details below to create a new landing page for your Telegram channel.
-                  </DialogDescription>
-                </DialogHeader>
-                <form
-                  onSubmit={channelForm.handleSubmit(onSubmitChannel)}
-                  className="space-y-4"
-                >
-                  <div>
-                    <Label htmlFor="name">Channel Name</Label>
-                    <Input {...channelForm.register("name")} />
-                    {channelForm.formState.errors.name && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {channelForm.formState.errors.name.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="subscribers">Subscribers</Label>
-                    <Input type="number" {...channelForm.register("subscribers")} />
-                    {channelForm.formState.errors.subscribers && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {channelForm.formState.errors.subscribers.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="logo">Channel Logo</Label>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      {...channelForm.register("logo")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="inviteLink">Telegram Invite Link</Label>
-                    <Input {...channelForm.register("inviteLink")} />
-                    {channelForm.formState.errors.inviteLink && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {channelForm.formState.errors.inviteLink.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      {...channelForm.register("description")}
-                      placeholder="👨🏻‍🏫 Start Your Profitable Journey with NISM Registered research analyst&#10;&#10;India's Best Channel For Option Trading&#10;&#10;✅ 👇🏻Click on the below link Before it Expires 👇🏻"
-                      rows={6}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={createChannelMutation.isPending}
-                  >
-                    {createChannelMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Create Landing Page
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Channel
+            </Button>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -448,6 +463,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <CreateChannelDialog
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      />
+
       <EditChannelDialog
         channel={editingChannel}
         isOpen={isEditDialogOpen}
@@ -456,9 +476,6 @@ export default function Dashboard() {
           if (!open) {
             setEditingChannel(null);
           }
-        }}
-        onEditSuccess={() => {
-          setEditingChannel(null);
         }}
       />
     </div>
