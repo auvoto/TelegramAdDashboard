@@ -110,7 +110,11 @@ export default function LandingPage() {
       </div>
 
       <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
-        <img src={channel.logo} alt={channel.name} className="icon mx-auto" />
+        <img 
+          src={channel.logo} 
+          alt={channel.name} 
+          className="rounded-full mt-5 w-[100px] h-[100px] mx-auto"
+        />
         <h1 className="text-2xl font-bold mt-4">
           {channel.name}
         </h1>
@@ -118,12 +122,12 @@ export default function LandingPage() {
           <small>{channel.subscribers} subscribers</small>
         </p>
         <p className="mt-4 whitespace-pre-line">{channel.description}</p>
-        <div className="countdown" id="countdown">
+        <div className="text-2xl my-4 text-red-500" id="countdown">
           Invitation closes in 10s
         </div>
         <a
           href={channel.inviteLink}
-          className="telegram-link"
+          className="bg-[#0088cc] text-white px-4 py-2 rounded hover:bg-[#006699] inline-block mt-2 transition-colors"
           onClick={handleTelegramClick}
           rel="noopener noreferrer"
         >
@@ -133,32 +137,6 @@ export default function LandingPage() {
           If you have Telegram you can view and join {channel.name} right away.
         </p>
       </div>
-
-      <style jsx>{`
-        .icon {
-          border-radius: 50%;
-          margin-top: 20px;
-          width: 100px;
-          height: 100px;
-        }
-        .telegram-link {
-          background-color: #0088cc;
-          color: white;
-          padding: 10px;
-          border-radius: 5px;
-          text-decoration: none;
-          display: inline-block;
-          margin-top: 10px;
-        }
-        .telegram-link:hover {
-          background-color: #006699;
-        }
-        .countdown {
-          font-size: 1.5em;
-          margin: 10px 0;
-          color: red;
-        }
-      `}</style>
 
       <noscript>
         <img
