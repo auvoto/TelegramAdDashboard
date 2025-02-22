@@ -19,7 +19,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     // Initialize Facebook Pixel (keep client-side tracking as fallback)
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.innerHTML = `
       !function(f,b,e,v,n,t,s)
       {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -29,7 +29,7 @@ export default function LandingPage() {
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '485785431234952');
+      fbq('init', '520700944254644');
       fbq('track', 'PageView');
     `;
     document.head.appendChild(script);
@@ -40,13 +40,13 @@ export default function LandingPage() {
 
     // Track channel view
     if (window.fbq) {
-      window.fbq('track', 'ViewContent', {
-        content_name: channelQuery.data.name
+      window.fbq("track", "ViewContent", {
+        content_name: channelQuery.data.name,
       });
     }
 
     // Setup countdown
-    const countdownElement = document.getElementById('countdown');
+    const countdownElement = document.getElementById("countdown");
     let countdownTime = 10;
 
     function updateCountdown() {
@@ -61,29 +61,31 @@ export default function LandingPage() {
     updateCountdown();
   }, [channelQuery.data]);
 
-  const handleTelegramClick = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleTelegramClick = async (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
     event.preventDefault();
     const link = event.currentTarget.href;
 
     try {
       // Track subscribe event server-side
       await apiRequest(`/api/channels/${uuid}/track-subscribe`, {
-        method: 'POST',
+        method: "POST",
       });
 
       // Keep client-side tracking as fallback
       if (window.fbq) {
-        window.fbq('track', 'Subscribe', {
-          content_name: channelQuery.data?.name
+        window.fbq("track", "Subscribe", {
+          content_name: channelQuery.data?.name,
         });
       }
     } catch (error) {
-      console.error('Failed to track subscribe event:', error);
+      console.error("Failed to track subscribe event:", error);
       // Continue with redirect even if tracking fails
     }
 
     // Open link in new tab
-    window.open(link, '_blank');
+    window.open(link, "_blank");
   };
 
   if (channelQuery.isLoading) {
@@ -152,7 +154,12 @@ export default function LandingPage() {
       <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
         <img src={channel.logo} alt={channel.name} className="icon mx-auto" />
         <h1 className="text-2xl font-bold mt-4">
-          <img src={channel.logo} alt={channel.name} className="hidden w-6 h-6 rounded-full" /> {channel.name}
+          <img
+            src={channel.logo}
+            alt={channel.name}
+            className="hidden w-6 h-6 rounded-full"
+          />{" "}
+          {channel.name}
         </h1>
         <p className="mt-0 text-gray-500">
           <small>{channel.subscribers} subscribers</small>
@@ -189,7 +196,7 @@ export default function LandingPage() {
         <img
           height="1"
           width="1"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           src="https://www.facebook.com/tr?id=485785431234952&ev=PageView&noscript=1"
         />
       </noscript>
