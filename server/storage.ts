@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import { randomUUID } from "node:crypto";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -45,9 +46,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createChannel(insertChannel: InsertChannel, userId: number): Promise<Channel> {
+    const uuid = randomUUID();
     const [channel] = await db
       .insert(channels)
-      .values({ ...insertChannel, userId })
+      .values({ 
+        ...insertChannel, 
+        userId,
+        uuid 
+      })
       .returning();
     return channel;
   }
