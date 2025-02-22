@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Users, Trash2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 // Create Channel Dialog Component
 function CreateChannelDialog({
@@ -166,7 +167,7 @@ function CreateChannelDialog({
 export default function Dashboard() {
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const channelsQuery = useQuery<Channel[]>({
     queryKey: ["/api/channels"],
