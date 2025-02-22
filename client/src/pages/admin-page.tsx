@@ -17,10 +17,17 @@ export default function AdminPage() {
 
   const updateUserRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
-      const res = await apiRequest("/api/users/" + userId + "/role", {
+      const res = await fetch(`/api/users/${userId}/role`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify({ role }),
       });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
       return res.json();
     },
     onSuccess: () => {
