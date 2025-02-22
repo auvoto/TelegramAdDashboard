@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,17 +36,17 @@ function EditChannelDialog({
   const editChannelForm = useForm({
     resolver: zodResolver(insertChannelSchema),
     defaultValues: {
-      name: channel?.name || "",
-      subscribers: channel?.subscribers || 0,
-      inviteLink: channel?.inviteLink || "",
-      description: channel?.description || "",
+      name: "",
+      subscribers: 0,
+      inviteLink: "",
+      description: "",
       logo: undefined,
     },
   });
 
-  // Reset form when channel changes
+  // Reset form when channel or open state changes
   React.useEffect(() => {
-    if (channel) {
+    if (channel && isOpen) {
       editChannelForm.reset({
         name: channel.name,
         subscribers: channel.subscribers,
@@ -55,7 +54,7 @@ function EditChannelDialog({
         description: channel.description || "",
       });
     }
-  }, [channel]);
+  }, [channel, isOpen]);
 
   const editChannelMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -108,7 +107,15 @@ function EditChannelDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          editChannelForm.reset();
+        }
+        onOpenChange(open);
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Channel Landing Page</DialogTitle>
@@ -270,7 +277,6 @@ export default function Dashboard() {
 
     createChannelMutation.mutate(formData);
   };
-
 
   if (isLoading) {
     return (
