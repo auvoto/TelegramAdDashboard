@@ -1,79 +1,65 @@
-import { InsertUser, User, Channel, InsertChannel } from "@shared/schema";
+import { users, channels, type User, type InsertUser, type Channel, type InsertChannel } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
-import { randomUUID } from "crypto";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   createChannel(channel: InsertChannel, userId: number): Promise<Channel>;
   getChannel(uuid: string): Promise<Channel | undefined>;
   getUserChannels(userId: number): Promise<Channel[]>;
-  
+
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private channels: Map<string, Channel>;
-  private currentUserId: number;
-  private currentChannelId: number;
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.channels = new Map();
-    this.currentUserId = 1;
-    this.currentChannelId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async createChannel(insertChannel: InsertChannel, userId: number): Promise<Channel> {
-    const id = this.currentChannelId++;
-    const uuid = randomUUID();
-    const channel: Channel = {
-      ...insertChannel,
-      id,
-      uuid,
-      userId,
-      createdAt: new Date(),
-    };
-    this.channels.set(uuid, channel);
+    const [channel] = await db
+      .insert(channels)
+      .values({ ...insertChannel, userId })
+      .returning();
     return channel;
   }
 
   async getChannel(uuid: string): Promise<Channel | undefined> {
-    return this.channels.get(uuid);
+    const [channel] = await db.select().from(channels).where(eq(channels.uuid, uuid));
+    return channel;
   }
 
   async getUserChannels(userId: number): Promise<Channel[]> {
-    return Array.from(this.channels.values()).filter(
-      (channel) => channel.userId === userId,
-    );
+    return await db.select().from(channels).where(eq(channels.userId, userId));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
