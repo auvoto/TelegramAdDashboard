@@ -142,13 +142,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             event_name: 'Subscribe',
             event_time: Math.floor(Date.now() / 1000),
             action_source: 'website',
+            event_source_url: req.headers.referer || '',
             user_data: {
               client_ip_address: req.ip || '',
               client_user_agent: req.headers['user-agent'] || '',
+              fbp: req.cookies._fbp || '',
+              fbc: req.cookies._fbc || ''
             },
             custom_data: {
               content_name: channel.name,
-              channel_uuid: channel.uuid
+              content_type: 'channel',
+              content_ids: [channel.uuid],
+              value: channel.subscribers,
+              currency: 'USD'
             }
           }],
         }),

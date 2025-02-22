@@ -30,6 +30,8 @@ export default function LandingPage() {
     if (window.fbq) {
       window.fbq("track", "ViewContent", {
         content_name: channelQuery.data.name,
+        content_type: 'channel',
+        content_ids: [channelQuery.data.uuid]
       });
     }
 
@@ -56,7 +58,18 @@ export default function LandingPage() {
     const link = event.currentTarget.href;
 
     try {
-      // Track subscribe event server-side
+      // Track subscribe event both client and server side for redundancy
+      if (window.fbq) {
+        window.fbq("track", "Subscribe", {
+          content_name: channelQuery.data?.name,
+          content_type: 'channel',
+          content_ids: [uuid],
+          value: channelQuery.data?.subscribers || 0,
+          currency: 'USD'
+        });
+      }
+
+      // Track server-side
       await trackSubscribe(uuid!);
     } catch (error) {
       console.error("Failed to track subscribe event:", error);
