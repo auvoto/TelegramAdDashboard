@@ -5,6 +5,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,6 +191,7 @@ export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const [editingChannel, setEditingChannel] = React.useState<Channel | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
 
   const channelsQuery = useQuery<Channel[]>({
     queryKey: ["/api/channels"],
@@ -225,6 +227,7 @@ export default function Dashboard() {
         description: "Your landing page has been generated successfully.",
       });
       channelForm.reset();
+      setIsCreateDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -316,13 +319,7 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold">Your Channels</h2>
               <p className="text-gray-600">Manage your Telegram channel landing pages</p>
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Channel
-                </Button>
-              </DialogTrigger>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create New Channel Landing Page</DialogTitle>
