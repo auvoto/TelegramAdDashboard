@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baap Of Banknifty ( SEBI Registered ) Telegram Channel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .telegram-link {
+            background-color: #0088cc;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .telegram-link:hover {
+            background-color: #006699;
+        }
+
+        .header {
+            background-color: #00AEEF;
+            color: white;
+            padding: 10px;
+        }
+
+        .icon {
+            border-radius: 50%;
+            margin-top: 20px;
+            width: 100px;
+            height: 100px;
+        }
+
+        .emoji {
+            font-size: 1.5em;
+        }
+
+        .note {
+            color: gray;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+
+        .maintained {
+            margin-top: 30px;
+            color: gray;
+            font-size: 0.9em;
+        }
+
+        .maintained a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .maintained a:hover {
+            text-decoration: underline;
+        }
+
+        .avitr-t-name {
+            /* margin-bottom: 0px;
+            padding-bottom: 0px; */
+        }
+        
+        .avitr-t-name img {
+            display: none;
+            height: 25px;
+            width: 25px;
+            border-radius: 50%
+        }
+
+        .countdown {
+            font-size: 1.5em;
+            margin: 10px 0;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div class="header">Don't have <strong><a href="https://web.telegram.org/k/" target="_blank" rel="noopener noreferrer">Telegram</a></strong> yet? Try it now!</div>
+        <img src="/storage/channel_logos/7JAvuxqWJk79mFRX1739014056.Jpeg" alt="Start Your Profitable Journey with NISM Registered research analyst" class="icon">
+        <h1 class="avitr-t-name"><img src="/storage/channel_logos/7JAvuxqWJk79mFRX1739014056.Jpeg"> Baap Of Banknifty ( SEBI Registered )</h1>
+        <p style="margin-top: 0px; padding-top: 0px;"><small class="text-gray">73821 subscribers</small></p>
+        <p><span class="emoji">👨🏻‍🏫</span> Start Your Profitable Journey with NISM Registered research analyst</p>
+        <p>India&#039;s Best Channel For Option Tarding</p>
+        <p>✅ 👇🏻Click on the below link Before it Expires 👇🏻</p>
+        <div class="countdown" id="countdown">Invitation closes in 10s</div>
+        <a href="https://telegram.me/+FCeCT_Lhowo4ZjY1" class="telegram-link" target="_blank">VIEW IN TELEGRAM</a>
+        <p class="note">If you have Telegram you can view and join, Baap Of Banknifty ( SEBI Registered ) right away.</p>
+        <div class="maintained">Maintained by <a href="https://metabulluniverse.digital/contact" target="_blank">Meta Bull Universe</a></div>
+    </div>
+
+    <script>
+        let countdownElement = document.getElementById('countdown');
+            let countdownTime = 10;
+    
+            function updateCountdown() {
+                countdownElement.textContent = `Invitation closes in ${countdownTime}s`;
+                if (countdownTime > 0) {
+                    countdownTime--;
+                    setTimeout(updateCountdown, 1000);
+                }
+            }
+    
+            updateCountdown();
+    </script>
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '485785431234952');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=485785431234952&ev=PageView&noscript=1" /></noscript>
+    <!-- End Meta Pixel Code -->
+</body>
+
+</html>
