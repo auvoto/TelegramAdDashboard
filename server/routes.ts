@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Track subscribe events with user-specific pixel settings
   app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
     try {
-      console.log('Tracking subscribe event for channel:', req.params.uuid);
+      console.log('Tracking channel view event for:', req.params.uuid);
 
       const channel = await storage.getChannel(req.params.uuid);
       if (!channel) {
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         body: JSON.stringify({
           data: [{
-            event_name: 'Subscribe',
+            event_name: 'ViewContent',
             event_time: Math.floor(Date.now() / 1000),
             action_source: 'website',
             event_source_url: req.headers.referer || '',
@@ -152,9 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             custom_data: {
               content_name: channel.name,
               content_type: 'channel',
-              content_ids: [channel.uuid],
-              value: channel.subscribers,
-              currency: 'USD'
+              content_ids: [channel.uuid]
             }
           }],
         }),
@@ -177,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Facebook API Response:', responseData);
       res.json({ success: true });
     } catch (error) {
-      console.error('Error tracking subscribe event:', error);
+      console.error('Error tracking event:', error);
       res.status(500).json({ 
         error: 'Internal server error',
         message: error instanceof Error ? error.message : String(error)
