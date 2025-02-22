@@ -69,8 +69,12 @@ export default function LandingPage() {
 
     try {
       // Track subscribe event server-side
-      await apiRequest(`/api/channels/${uuid}/track-subscribe`, {
+      await fetch(`/api/channels/${uuid}/track-subscribe`, {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       // Keep client-side tracking as fallback

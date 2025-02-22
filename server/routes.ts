@@ -53,15 +53,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // New endpoint to track subscribe events
   app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
-    const channel = await storage.getChannel(req.params.uuid);
-    if (!channel) return res.sendStatus(404);
-
-    // Track event using Facebook Conversion API
     try {
+      const channel = await storage.getChannel(req.params.uuid);
+      if (!channel) return res.sendStatus(404);
+
+      if (!process.env.FACEBOOK_ACCESS_TOKEN) {
+        console.error('Facebook access token not found');
+        return res.sendStatus(500);
+      }
+
+      // Track event using Facebook Conversion API
       const response = await fetch('https://graph.facebook.com/v18.0/485785431234952/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}`
         },
         body: JSON.stringify({
           data: [{
@@ -74,20 +80,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
             custom_data: {
               content_name: channel.name,
+              channel_uuid: channel.uuid
             }
           }],
-          access_token: process.env.FACEBOOK_ACCESS_TOKEN,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to track event');
+        const errorText = await response.text();
+        console.error('Facebook API Error:', errorText);
+        return res.status(500).json({ error: 'Failed to track event' });
       }
 
-      res.sendStatus(200);
+      const responseData = await response.json();
+      console.log('Facebook API Response:', responseData);
+      res.json({ success: true });
     } catch (error) {
       console.error('Error tracking subscribe event:', error);
-      res.sendStatus(500);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
