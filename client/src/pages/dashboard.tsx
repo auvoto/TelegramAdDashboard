@@ -139,16 +139,17 @@ export default function Dashboard() {
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Adova Marketing" className="h-8" />
+            <div>
               <h1 className="text-xl font-bold">Adova Marketing</h1>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-gray-600">Welcome, {user?.username}</span>
               {user?.role === "admin" && (
-                <Button variant="outline" onClick={() => window.location.href = "/admin"}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Users
+                <Button variant="outline" asChild>
+                  <a href="/admin">
+                    <Users className="h-4 w-4 mr-2" />
+                    Manage Users
+                  </a>
                 </Button>
               )}
             </div>
