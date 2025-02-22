@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Track event using Facebook Conversion API
-      const response = await fetch('https://graph.facebook.com/v18.0/485785431234952/events', {
+      const response = await fetch('https://graph.facebook.com/v18.0/520700944254644/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
