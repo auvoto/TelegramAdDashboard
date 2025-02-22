@@ -51,10 +51,13 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
+          console.log('Login failed:', { username, reason: !user ? 'User not found' : 'Password mismatch' });
           return done(null, false);
         }
+        console.log('Login successful:', { username, role: user.role });
         return done(null, user);
       } catch (error) {
+        console.error('Login error:', error);
         return done(error);
       }
     }),
