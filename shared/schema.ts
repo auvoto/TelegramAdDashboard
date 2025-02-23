@@ -28,6 +28,9 @@ export const channels = pgTable("channels", {
   description: text("description").default("👨🏻‍🏫 Start Your Profitable Journey with NISM Registered research analyst\n\nIndia's Best Channel For Option Trading\n\n✅ 👇🏻Click on the below link Before it Expires 👇🏻"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: integer("user_id").notNull(),
+  // Add custom pixel settings fields
+  customPixelId: text("custom_pixel_id"),
+  customAccessToken: text("custom_access_token"),
 });
 
 // Only used internally for admin creating new employees
@@ -55,12 +58,16 @@ export const insertChannelSchema = createInsertSchema(channels)
     subscribers: true, 
     inviteLink: true,
     description: true,
-    logo: true
+    logo: true,
+    customPixelId: true,
+    customAccessToken: true
   })
   .extend({
     subscribers: z.coerce.number().min(0),
     description: z.string().optional(),
     logo: z.any(), //This is a placeholder, needs further refinement based on the actual File type.
+    customPixelId: z.string().optional(),
+    customAccessToken: z.string().optional(),
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

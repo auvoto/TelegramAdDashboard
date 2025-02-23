@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(channel);
   });
 
-  // Track subscribe events with user-specific pixel settings
+  // Track subscribe events with channel-specific or user's default pixel settings
   app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
     try {
       console.log('Tracking channel contact event for:', req.params.uuid);
@@ -119,23 +119,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Found channel:', channel.name, 'userId:', channel.userId);
 
-      const pixelSettings = await storage.getPixelSettings(channel.userId);
-      if (!pixelSettings) {
-        console.error('Pixel settings not found for userId:', channel.userId);
-        return res.status(500).json({ error: 'Pixel settings not configured' });
+      // Use channel-specific pixel settings if available, otherwise fall back to user's default settings
+      let pixelId: string | undefined;
+      let accessToken: string | undefined;
+
+      if (channel.customPixelId && channel.customAccessToken) {
+        pixelId = channel.customPixelId;
+        accessToken = channel.customAccessToken;
+        console.log('Using channel-specific pixel settings');
+      } else {
+        const pixelSettings = await storage.getPixelSettings(channel.userId);
+        if (!pixelSettings) {
+          console.error('Pixel settings not found for userId:', channel.userId);
+          return res.status(500).json({ error: 'Pixel settings not configured' });
+        }
+        pixelId = pixelSettings.pixelId;
+        accessToken = pixelSettings.accessToken;
+        console.log('Using default pixel settings');
       }
 
-      console.log('Found pixel settings:', { 
-        pixelId: pixelSettings.pixelId,
-        hasAccessToken: !!pixelSettings.accessToken 
-      });
-
-      // Track event using Facebook Conversion API with user-specific settings
-      const response = await fetch(`https://graph.facebook.com/v18.0/${pixelSettings.pixelId}/events`, {
+      // Track event using Facebook Conversion API
+      const response = await fetch(`https://graph.facebook.com/v18.0/${pixelId}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pixelSettings.accessToken}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           data: [{

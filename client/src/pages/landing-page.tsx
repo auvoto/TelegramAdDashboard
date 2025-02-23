@@ -18,13 +18,12 @@ export default function LandingPage() {
   });
 
   useEffect(() => {
-    // Initialize Facebook Pixel
-    initFacebookPixel('520700944254644'); // Your Facebook Pixel ID
-    trackPageView();
-  }, []);
-
-  useEffect(() => {
     if (!channelQuery.data) return;
+
+    // Initialize Facebook Pixel with channel-specific ID if available
+    const pixelId = channelQuery.data.customPixelId || '520700944254644';
+    initFacebookPixel(pixelId);
+    trackPageView();
 
     // Track channel view
     if (window.fbq) {
@@ -143,7 +142,7 @@ export default function LandingPage() {
           height="1"
           width="1"
           style={{ display: "none" }}
-          src="https://www.facebook.com/tr?id=520700944254644&ev=PageView&noscript=1"
+          src={`https://www.facebook.com/tr?id=${channel.customPixelId || '520700944254644'}&ev=PageView&noscript=1`}
         />
       </noscript>
     </div>
