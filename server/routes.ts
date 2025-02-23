@@ -108,6 +108,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(channel);
   });
 
+  // Add DELETE endpoint for channels
+  app.delete("/api/channels/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const channelId = parseInt(req.params.id);
+    if (isNaN(channelId)) {
+      return res.status(400).json({ error: "Invalid channel ID" });
+    }
+
+    try {
+      await storage.deleteChannel(channelId);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting channel:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   // Track subscribe events with channel-specific or user's default pixel settings
   app.post("/api/channels/:uuid/track-subscribe", async (req, res) => {
     try {
