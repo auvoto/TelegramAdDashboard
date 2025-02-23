@@ -159,8 +159,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(channels)
       .where(
-        eq(channels.userId, userId),
-        eq(channels.deleted, false)
+        eq(channels.userId, userId)
+        .and(eq(channels.deleted, false))
       );
   }
 
