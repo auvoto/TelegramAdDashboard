@@ -58,14 +58,13 @@ export const insertChannelSchema = createInsertSchema(channels)
     subscribers: true, 
     inviteLink: true,
     description: true,
-    logo: true,
     customPixelId: true,
     customAccessToken: true
   })
   .extend({
     subscribers: z.coerce.number().min(0),
     description: z.string().optional(),
-    logo: z.any(), //This is a placeholder, needs further refinement based on the actual File type.
+    logo: z.any(), // This is a placeholder, needs further refinement based on the actual File type.
     customPixelId: z.string().optional(),
     customAccessToken: z.string().optional(),
   });
