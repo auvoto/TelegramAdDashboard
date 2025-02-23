@@ -8,8 +8,14 @@ import { useForm } from "react-hook-form";
 import { insertChannelSchema } from "@shared/schema";
 import { ChevronDown, ChevronUp, Settings } from "lucide-react";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
-export function ChannelForm({ onSubmit, isLoading = false }) {
+interface ChannelFormProps {
+  onSubmit: (data: FormData) => void;
+  isLoading?: boolean;
+}
+
+export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
   const [isAdditionalOpen, setIsAdditionalOpen] = useState(false);
 
   const form = useForm({
@@ -19,14 +25,38 @@ export function ChannelForm({ onSubmit, isLoading = false }) {
       subscribers: 0,
       inviteLink: "",
       description: "",
+      logo: undefined,
       customPixelId: "",
       customAccessToken: "",
     },
   });
 
+  const handleSubmit = form.handleSubmit((data) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("subscribers", String(data.subscribers));
+    formData.append("inviteLink", data.inviteLink);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+    if (data.customPixelId) {
+      formData.append("customPixelId", data.customPixelId);
+    }
+    if (data.customAccessToken) {
+      formData.append("customAccessToken", data.customAccessToken);
+    }
+
+    const logoFiles = form.getValues("logo") as FileList;
+    if (logoFiles?.[0]) {
+      formData.append("logo", logoFiles[0]);
+    }
+
+    onSubmit(formData);
+  });
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -49,6 +79,25 @@ export function ChannelForm({ onSubmit, isLoading = false }) {
               <FormLabel>Number of Subscribers</FormLabel>
               <FormControl>
                 <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="logo"
+          render={({ field: { value, onChange, ...field } }) => (
+            <FormItem>
+              <FormLabel>Channel Logo</FormLabel>
+              <FormControl>
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => onChange(e.target.files)}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -136,6 +185,7 @@ export function ChannelForm({ onSubmit, isLoading = false }) {
 
         <div className="pt-4">
           <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Channel
           </Button>
         </div>

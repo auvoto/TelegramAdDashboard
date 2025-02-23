@@ -27,10 +27,10 @@ function CreateChannelDialog({
   const { toast } = useToast();
 
   const createChannelMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (formData: FormData) => {
       const res = await fetch("/api/channels", {
         method: "POST",
-        body: data,
+        body: formData,
         credentials: "include",
       });
       if (!res.ok) {
@@ -61,29 +61,6 @@ function CreateChannelDialog({
     },
   });
 
-  const handleSubmit = (data: any) => {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("subscribers", String(data.subscribers));
-    formData.append("inviteLink", data.inviteLink);
-    if (data.description) {
-      formData.append("description", data.description);
-    }
-    if (data.customPixelId) {
-      formData.append("customPixelId", data.customPixelId);
-    }
-    if (data.customAccessToken) {
-      formData.append("customAccessToken", data.customAccessToken);
-    }
-
-    const logoFiles = data.logo as FileList;
-    if (logoFiles && logoFiles.length > 0) {
-      formData.append("logo", logoFiles[0]);
-    }
-
-    createChannelMutation.mutate(formData);
-  };
-
   return (
     <Dialog 
       open={isOpen} 
@@ -97,7 +74,7 @@ function CreateChannelDialog({
           </DialogDescription>
         </DialogHeader>
         <ChannelForm 
-          onSubmit={handleSubmit}
+          onSubmit={(formData) => createChannelMutation.mutate(formData)}
           isLoading={createChannelMutation.isPending}
         />
       </DialogContent>
