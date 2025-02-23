@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -16,7 +16,9 @@ import {
   Users, 
   Trash2, 
   Info, 
-  Search 
+  Search,
+  Copy,
+  Check
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,15 +36,29 @@ function ChannelInfoDialog({
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { toast } = useToast();
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string | undefined | null, field: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    toast({
+      title: "Copied!",
+      description: "Text copied to clipboard",
+    });
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Channel Details</DialogTitle>
         </DialogHeader>
-        <div className="overflow-y-auto pr-6">
+        <div className="overflow-y-auto pr-6 max-h-[calc(80vh-8rem)]">
           {channel && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <img src={channel.logo} alt={channel.name} className="w-16 h-16 rounded-full" />
                 <div>
@@ -52,49 +68,105 @@ function ChannelInfoDialog({
               </div>
 
               <div>
-                <h4 className="font-semibold mb-1">Description</h4>
-                <p className="text-gray-600 whitespace-pre-line">{channel.description}</p>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold">Description</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleCopy(channel.description, 'description')}
+                  >
+                    {copiedField === 'description' ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-gray-600 whitespace-pre-line mt-1">{channel.description}</p>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-1">Invite Link</h4>
-                <p className="text-sm text-gray-600 break-all">{channel.inviteLink}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText(channel.inviteLink);
-                  }}
-                >
-                  Copy Invite Link
-                </Button>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold">Invite Link</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleCopy(channel.inviteLink, 'inviteLink')}
+                  >
+                    {copiedField === 'inviteLink' ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 break-all mt-1">{channel.inviteLink}</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold">Landing Page URL</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleCopy(`${window.location.origin}/channels/${channel.uuid}`, 'landingPage')}
+                  >
+                    {copiedField === 'landingPage' ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 break-all mt-1">
+                  {`${window.location.origin}/channels/${channel.uuid}`}
+                </p>
               </div>
 
               {channel.customPixelId && (
                 <div>
-                  <h4 className="font-semibold mb-1">Custom Pixel ID</h4>
-                  <p className="text-sm text-gray-600">{channel.customPixelId}</p>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Custom Pixel ID</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleCopy(channel.customPixelId, 'pixelId')}
+                    >
+                      {copiedField === 'pixelId' ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{channel.customPixelId}</p>
                 </div>
               )}
 
-              <div>
-                <h4 className="font-semibold mb-1">Landing Page URL</h4>
-                <p className="text-sm text-gray-600 break-all">
-                  {`${window.location.origin}/channels/${channel.uuid}`}
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => {
-                    const url = `${window.location.origin}/channels/${channel.uuid}`;
-                    navigator.clipboard.writeText(url);
-                  }}
-                >
-                  Copy Landing Page URL
-                </Button>
-              </div>
+              {channel.customAccessToken && (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Custom Access Token</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleCopy(channel.customAccessToken, 'accessToken')}
+                    >
+                      {copiedField === 'accessToken' ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{channel.customAccessToken}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
