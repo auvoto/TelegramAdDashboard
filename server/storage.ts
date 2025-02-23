@@ -158,7 +158,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserChannels(userId: number): Promise<Channel[]> {
     console.log('Fetching channels for user:', userId);
-    const channels = await db
+    const userChannels = await db
       .select()
       .from(channels)
       .where(
@@ -167,8 +167,8 @@ export class DatabaseStorage implements IStorage {
           eq(channels.deleted, false)
         )
       );
-    console.log('Found channels:', channels.length, 'Deleted status of first channel:', channels[0]?.deleted);
-    return channels;
+    console.log('Found channels:', userChannels.length, 'Deleted status of first channel:', userChannels[0]?.deleted);
+    return userChannels;
   }
 
   async deleteChannel(channelId: number): Promise<void> {
