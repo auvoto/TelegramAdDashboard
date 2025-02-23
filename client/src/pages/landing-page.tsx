@@ -20,17 +20,21 @@ export default function LandingPage() {
   useEffect(() => {
     if (!channelQuery.data) return;
 
-    // Initialize Facebook Pixel with channel-specific ID if available
-    const pixelId = channelQuery.data.customPixelId || '520700944254644';
+    const channel = channelQuery.data;
+    // Always use channel-specific pixel if available, otherwise fall back to default
+    const pixelId = channel.customPixelId || '520700944254644';
+
+    console.log('Initializing pixel:', pixelId, 'for channel:', channel.name);
+
     initFacebookPixel(pixelId);
     trackPageView();
 
     // Track channel view
     if (window.fbq) {
       window.fbq("track", "ViewContent", {
-        content_name: channelQuery.data.name,
+        content_name: channel.name,
         content_type: 'channel',
-        content_ids: [channelQuery.data.uuid]
+        content_ids: [channel.uuid]
       });
     }
 

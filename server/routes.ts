@@ -84,6 +84,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscribers: req.body.subscribers,
         inviteLink: req.body.inviteLink,
         description: req.body.description || undefined,
+        customPixelId: req.body.customPixelId || undefined,
+        customAccessToken: req.body.customAccessToken || undefined,
       });
 
       const channel = await storage.createChannel(channelData, req.user.id, req.file);
