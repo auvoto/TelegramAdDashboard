@@ -6,19 +6,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { insertChannelSchema, type Channel } from "@shared/schema";
+import { type Channel } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Users, Trash2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { ChannelForm } from "@/components/channel-form";
 
 // Create Channel Dialog Component
 function CreateChannelDialog({
@@ -29,16 +25,6 @@ function CreateChannelDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
-  const form = useForm({
-    resolver: zodResolver(insertChannelSchema),
-    defaultValues: {
-      name: "",
-      subscribers: 0,
-      inviteLink: "",
-      description: "",
-      logo: undefined,
-    },
-  });
 
   const createChannelMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -64,7 +50,6 @@ function CreateChannelDialog({
         title: "Channel created",
         description: "Your landing page has been generated successfully.",
       });
-      form.reset();
       onOpenChange(false);
     },
     onError: (error: Error) => {
@@ -76,13 +61,19 @@ function CreateChannelDialog({
     },
   });
 
-  const onSubmit = (data: any) => {
+  const handleSubmit = (data: any) => {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("subscribers", String(data.subscribers));
     formData.append("inviteLink", data.inviteLink);
     if (data.description) {
       formData.append("description", data.description);
+    }
+    if (data.customPixelId) {
+      formData.append("customPixelId", data.customPixelId);
+    }
+    if (data.customAccessToken) {
+      formData.append("customAccessToken", data.customAccessToken);
     }
 
     const logoFiles = data.logo as FileList;
@@ -96,12 +87,7 @@ function CreateChannelDialog({
   return (
     <Dialog 
       open={isOpen} 
-      onOpenChange={(open) => {
-        if (!open) {
-          form.reset();
-        }
-        onOpenChange(open);
-      }}
+      onOpenChange={onOpenChange}
     >
       <DialogContent>
         <DialogHeader>
@@ -110,60 +96,10 @@ function CreateChannelDialog({
             Fill in the details below to create a new landing page for your Telegram channel.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Channel Name</Label>
-            <Input {...form.register("name")} />
-            {form.formState.errors.name && (
-              <p className="text-sm text-red-500 mt-1">
-                {form.formState.errors.name.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="subscribers">Subscribers</Label>
-            <Input type="number" {...form.register("subscribers")} />
-            {form.formState.errors.subscribers && (
-              <p className="text-sm text-red-500 mt-1">
-                {form.formState.errors.subscribers.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="logo">Channel Logo</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              {...form.register("logo")}
-            />
-          </div>
-          <div>
-            <Label htmlFor="inviteLink">Telegram Invite Link</Label>
-            <Input {...form.register("inviteLink")} />
-            {form.formState.errors.inviteLink && (
-              <p className="text-sm text-red-500 mt-1">
-                {form.formState.errors.inviteLink.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              {...form.register("description")}
-              rows={6}
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={createChannelMutation.isPending}
-          >
-            {createChannelMutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Create Landing Page
-          </Button>
-        </form>
+        <ChannelForm 
+          onSubmit={handleSubmit}
+          isLoading={createChannelMutation.isPending}
+        />
       </DialogContent>
     </Dialog>
   );
