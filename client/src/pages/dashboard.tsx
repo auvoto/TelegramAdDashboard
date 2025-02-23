@@ -303,17 +303,17 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-xl font-bold">Adova Marketing</h1>
+              <h1 className="text-2xl font-bold text-white">Adova Marketing</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-gray-600">Welcome, {user?.username}</span>
+              <span className="text-white/90">Welcome, {user?.username}</span>
               {user?.role === "admin" && (
-                <Button variant="outline" asChild>
+                <Button variant="secondary" className="hover:bg-blue-100" asChild>
                   <a href="/admin">
                     <Users className="h-4 w-4 mr-2" />
                     Manage Team
@@ -326,10 +326,10 @@ export default function Dashboard() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <div>
-              <h2 className="text-2xl font-bold">Your Channels</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Your Channels</h2>
               <p className="text-gray-600">Manage your Telegram channel landing pages</p>
             </div>
             <div className="flex gap-4 w-full sm:w-auto">
@@ -340,10 +340,13 @@ export default function Dashboard() {
                   placeholder="Search channels..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 bg-white border-gray-200 focus-visible:ring-blue-500"
                 />
               </div>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Button 
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white shadow-md"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 New Channel
               </Button>
@@ -352,12 +355,15 @@ export default function Dashboard() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredChannels.map((channel) => (
-              <Card key={channel.id} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={channel.id} 
+                className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white border-gray-200"
+              >
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <img src={channel.logo} alt={channel.name} className="w-12 h-12 rounded-full object-cover" />
+                    <img src={channel.logo} alt={channel.name} className="w-12 h-12 rounded-full object-cover shadow-md" />
                     <div>
-                      <CardTitle>{channel.name}</CardTitle>
+                      <CardTitle className="text-gray-800">{channel.name}</CardTitle>
                       <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
                     </div>
                   </div>
@@ -366,7 +372,7 @@ export default function Dashboard() {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                       onClick={() => {
                         const url = `${window.location.origin}/channels/${channel.uuid}`;
                         navigator.clipboard.writeText(url);
@@ -380,6 +386,7 @@ export default function Dashboard() {
                     </Button>
                     <Button
                       variant="outline"
+                      className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                       onClick={() => {
                         setSelectedChannel(channel);
                         setIsInfoDialogOpen(true);
@@ -389,6 +396,7 @@ export default function Dashboard() {
                     </Button>
                     <Button
                       variant="outline"
+                      className="hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                       onClick={() => {
                         if (confirm("Are you sure you want to delete this channel?")) {
                           deleteChannelMutation.mutate(channel.id);
