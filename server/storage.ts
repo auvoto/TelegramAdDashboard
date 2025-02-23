@@ -144,12 +144,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getChannel(uuid: string): Promise<Channel | undefined> {
-    const [channel] = await db.select().from(channels).where(eq(channels.uuid, uuid));
+    const [channel] = await db
+      .select()
+      .from(channels)
+      .where(
+        eq(channels.uuid, uuid),
+        eq(channels.deleted, false)
+      );
     return channel;
   }
 
   async getUserChannels(userId: number): Promise<Channel[]> {
-    return await db.select().from(channels).where(eq(channels.userId, userId));
+    return await db
+      .select()
+      .from(channels)
+      .where(
+        eq(channels.userId, userId),
+        eq(channels.deleted, false)
+      );
   }
 
   async deleteChannel(channelId: number): Promise<void> {
@@ -169,8 +181,11 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Delete the channel from the database
-    await db.delete(channels).where(eq(channels.id, channelId));
+    // Soft delete the channel by setting deleted=true
+    await db
+      .update(channels)
+      .set({ deleted: true })
+      .where(eq(channels.id, channelId));
   }
 }
 
