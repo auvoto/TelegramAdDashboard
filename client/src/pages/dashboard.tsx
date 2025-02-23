@@ -52,8 +52,14 @@ function CreateChannelDialog({
       }
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/channels"] });
+    onSuccess: (newChannel) => {
+      // Update the channels data in the cache by appending the new channel
+      const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
+      queryClient.setQueryData(
+        ["/api/channels"],
+        [...currentChannels, newChannel]
+      );
+
       toast({
         title: "Channel created",
         description: "Your landing page has been generated successfully.",
@@ -182,9 +188,9 @@ export default function Dashboard() {
       if (!res.ok) {
         throw new Error(await res.text());
       }
-      return id; // Return the ID to onSuccess
+      return id;
     },
-    onSuccess: (_, deletedId) => {
+    onSuccess: (deletedId) => {
       // Update the channels data in the cache by filtering out the deleted channel
       const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
       queryClient.setQueryData(
