@@ -1,6 +1,6 @@
 import { users, channels, pixelSettings, type User, type InsertUser, type Channel, type InsertChannel, type PixelSettings, type InsertPixelSettings } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -159,8 +159,10 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(channels)
       .where(
-        eq(channels.userId, userId)
-        .and(eq(channels.deleted, false))
+        and(
+          eq(channels.userId, userId),
+          eq(channels.deleted, false)
+        )
       );
   }
 
