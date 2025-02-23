@@ -5,7 +5,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { randomUUID } from "node:crypto";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 
 const PostgresSessionStore = connectPg(session);
@@ -153,6 +153,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteChannel(channelId: number): Promise<void> {
+    // First, get the channel details to delete the logo file
+    const [channel] = await db
+      .select()
+      .from(channels)
+      .where(eq(channels.id, channelId));
+
+    if (channel?.logo) {
+      try {
+        // Delete the logo file from the filesystem
+        const logoPath = join(process.cwd(), channel.logo.replace(/^\/uploads/, 'uploads'));
+        await unlink(logoPath);
+      } catch (error) {
+        console.error('Error deleting logo file:', error);
+      }
+    }
+
+    // Delete the channel from the database
     await db.delete(channels).where(eq(channels.id, channelId));
   }
 }

@@ -10,11 +10,98 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type Channel } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Users, Trash2 } from "lucide-react";
+import { 
+  Loader2, 
+  Plus, 
+  Users, 
+  Trash2, 
+  Info, 
+  Search 
+} from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { ChannelForm } from "@/components/channel-form";
+import { Input } from "@/components/ui/input";
+
+// Channel Info Dialog Component
+function ChannelInfoDialog({
+  channel,
+  isOpen,
+  onOpenChange
+}: {
+  channel: Channel | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Channel Details</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-y-auto pr-6">
+          {channel && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <img src={channel.logo} alt={channel.name} className="w-16 h-16 rounded-full" />
+                <div>
+                  <h3 className="font-semibold">{channel.name}</h3>
+                  <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-1">Description</h4>
+                <p className="text-gray-600 whitespace-pre-line">{channel.description}</p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-1">Invite Link</h4>
+                <p className="text-sm text-gray-600 break-all">{channel.inviteLink}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(channel.inviteLink);
+                  }}
+                >
+                  Copy Invite Link
+                </Button>
+              </div>
+
+              {channel.customPixelId && (
+                <div>
+                  <h4 className="font-semibold mb-1">Custom Pixel ID</h4>
+                  <p className="text-sm text-gray-600">{channel.customPixelId}</p>
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-semibold mb-1">Landing Page URL</h4>
+                <p className="text-sm text-gray-600 break-all">
+                  {`${window.location.origin}/channels/${channel.uuid}`}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    const url = `${window.location.origin}/channels/${channel.uuid}`;
+                    navigator.clipboard.writeText(url);
+                  }}
+                >
+                  Copy Landing Page URL
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // Create Channel Dialog Component
 function CreateChannelDialog({
@@ -39,11 +126,11 @@ function CreateChannelDialog({
       return res.json();
     },
     onSuccess: (newChannel) => {
-      // Update the channels data in the cache by appending the new channel
+      // Update the channels data in the cache by prepending the new channel
       const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
       queryClient.setQueryData(
         ["/api/channels"],
-        [...currentChannels, newChannel]
+        [newChannel, ...currentChannels]
       );
 
       toast({
@@ -89,6 +176,9 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const channelsQuery = useQuery<Channel[]>({
     queryKey: ["/api/channels"],
@@ -127,6 +217,11 @@ export default function Dashboard() {
     },
   });
 
+  // Filter channels based on search query
+  const filteredChannels = channelsQuery.data?.filter(channel => 
+    channel.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -160,19 +255,31 @@ export default function Dashboard() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <div>
               <h2 className="text-2xl font-bold">Your Channels</h2>
               <p className="text-gray-600">Manage your Telegram channel landing pages</p>
             </div>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Channel
-            </Button>
+            <div className="flex gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-initial">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <Input
+                  type="text"
+                  placeholder="Search channels..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Channel
+              </Button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {channelsQuery.data?.map((channel) => (
+            {filteredChannels.map((channel) => (
               <Card key={channel.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -201,15 +308,22 @@ export default function Dashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      onClick={() => {
+                        setSelectedChannel(channel);
+                        setIsInfoDialogOpen(true);
+                      }}
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         if (confirm("Are you sure you want to delete this channel?")) {
                           deleteChannelMutation.mutate(channel.id);
                         }
                       }}
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -222,6 +336,12 @@ export default function Dashboard() {
       <CreateChannelDialog
         isOpen={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+      />
+
+      <ChannelInfoDialog 
+        channel={selectedChannel}
+        isOpen={isInfoDialogOpen}
+        onOpenChange={setIsInfoDialogOpen}
       />
     </div>
   );
