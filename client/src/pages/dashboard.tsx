@@ -66,17 +66,19 @@ function CreateChannelDialog({
       open={isOpen} 
       onOpenChange={onOpenChange}
     >
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-h-[90vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>Create New Channel Landing Page</DialogTitle>
           <DialogDescription>
             Fill in the details below to create a new landing page for your Telegram channel.
           </DialogDescription>
         </DialogHeader>
-        <ChannelForm 
-          onSubmit={(formData) => createChannelMutation.mutate(formData)}
-          isLoading={createChannelMutation.isPending}
-        />
+        <div className="flex-1 overflow-y-auto px-6">
+          <ChannelForm 
+            onSubmit={(formData) => createChannelMutation.mutate(formData)}
+            isLoading={createChannelMutation.isPending}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

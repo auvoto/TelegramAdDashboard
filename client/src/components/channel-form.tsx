@@ -46,7 +46,7 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
       formData.append("customAccessToken", data.customAccessToken);
     }
 
-    const logoFiles = form.getValues("logo") as FileList;
+    const logoFiles = form.getValues("logo") as FileList | null;
     if (logoFiles?.[0]) {
       formData.append("logo", logoFiles[0]);
     }
@@ -56,7 +56,7 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 pb-6">
         <FormField
           control={form.control}
           name="name"
@@ -183,7 +183,7 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
           </CollapsibleContent>
         </Collapsible>
 
-        <div className="pt-4">
+        <div className="sticky bottom-0 pt-4 bg-white">
           <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Channel
