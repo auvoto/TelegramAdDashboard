@@ -10,12 +10,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type Channel } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Loader2, 
-  Plus, 
-  Users, 
-  Trash2, 
-  Info, 
+import {
+  Loader2,
+  Plus,
+  Users,
+  Trash2,
+  Info,
   Search,
   Copy,
   Check
@@ -221,8 +221,8 @@ function CreateChannelDialog({
   });
 
   return (
-    <Dialog 
-      open={isOpen} 
+    <Dialog
+      open={isOpen}
       onOpenChange={onOpenChange}
     >
       <DialogContent className="max-h-[90vh] flex flex-col gap-0 p-0">
@@ -233,7 +233,7 @@ function CreateChannelDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6">
-          <ChannelForm 
+          <ChannelForm
             onSubmit={(formData) => createChannelMutation.mutate(formData)}
             isLoading={createChannelMutation.isPending}
           />
@@ -258,16 +258,20 @@ export default function Dashboard() {
 
   const deleteChannelMutation = useMutation({
     mutationFn: async (id: number) => {
+      console.log('Attempting to delete channel:', id); 
       const res = await fetch(`/api/channels/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
       if (!res.ok) {
-        throw new Error(await res.text());
+        const errorText = await res.text();
+        console.error('Delete channel failed:', errorText); 
+        throw new Error(errorText);
       }
       return id;
     },
     onSuccess: (deletedId) => {
+      console.log('Channel deleted successfully:', deletedId); 
       // Update the channels data in the cache by filtering out the deleted channel
       const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
       queryClient.setQueryData(
@@ -281,6 +285,7 @@ export default function Dashboard() {
       });
     },
     onError: (error: Error) => {
+      console.error('Delete channel mutation error:', error); 
       toast({
         title: "Error",
         description: error.message,
@@ -290,7 +295,7 @@ export default function Dashboard() {
   });
 
   // Filter channels based on search query
-  const filteredChannels = channelsQuery.data?.filter(channel => 
+  const filteredChannels = channelsQuery.data?.filter(channel =>
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
@@ -343,7 +348,7 @@ export default function Dashboard() {
                   className="pl-9 bg-white border-gray-200 focus-visible:ring-blue-500"
                 />
               </div>
-              <Button 
+              <Button
                 onClick={() => setIsCreateDialogOpen(true)}
                 className="bg-blue-500 hover:bg-blue-600 text-white shadow-md"
               >
@@ -355,8 +360,8 @@ export default function Dashboard() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredChannels.map((channel) => (
-              <Card 
-                key={channel.id} 
+              <Card
+                key={channel.id}
                 className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white border-gray-200"
               >
                 <CardHeader>
@@ -418,7 +423,7 @@ export default function Dashboard() {
         onOpenChange={setIsCreateDialogOpen}
       />
 
-      <ChannelInfoDialog 
+      <ChannelInfoDialog
         channel={selectedChannel}
         isOpen={isInfoDialogOpen}
         onOpenChange={setIsInfoDialogOpen}

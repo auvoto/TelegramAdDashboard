@@ -172,34 +172,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteChannel(channelId: number): Promise<void> {
-    // First, get the channel details to delete the logo file
-    const [channel] = await db
-      .select()
-      .from(channels)
-      .where(eq(channels.id, channelId));
+    console.log('Starting deleteChannel process for ID:', channelId);
 
-    if (channel?.logo) {
-      try {
-        // Delete the logo file from the filesystem
-        const logoPath = join(process.cwd(), channel.logo.replace(/^\/uploads/, 'uploads'));
-        await unlink(logoPath);
-      } catch (error) {
-        console.error('Error deleting logo file:', error);
+    try {
+      // First, get the channel details to delete the logo file
+      const [channel] = await db
+        .select()
+        .from(channels)
+        .where(eq(channels.id, channelId));
+
+      console.log('Found channel to delete:', channel);
+
+      if (channel?.logo) {
+        try {
+          // Delete the logo file from the filesystem
+          const logoPath = join(process.cwd(), channel.logo.replace(/^\/uploads/, 'uploads'));
+          await unlink(logoPath);
+          console.log('Logo file deleted successfully:', logoPath);
+        } catch (error) {
+          console.error('Error deleting logo file:', error);
+          // Continue with channel deletion even if logo deletion fails
+        }
       }
+
+      // Soft delete the channel by setting deleted=true
+      const [updatedChannel] = await db
+        .update(channels)
+        .set({ deleted: true })
+        .where(eq(channels.id, channelId))
+        .returning();
+
+      if (!updatedChannel) {
+        throw new Error(`Failed to update channel ${channelId}`);
+      }
+
+      console.log('Channel updated successfully:', {
+        id: updatedChannel.id,
+        deleted: updatedChannel.deleted
+      });
+
+    } catch (error) {
+      console.error('Error in deleteChannel:', error);
+      throw error; // Re-throw to handle in the route handler
     }
-
-    // Log before deletion
-    console.log('Deleting channel:', channelId);
-
-    // Soft delete the channel by setting deleted=true
-    const [updatedChannel] = await db
-      .update(channels)
-      .set({ deleted: true })
-      .where(eq(channels.id, channelId))
-      .returning();
-
-    // Log after deletion
-    console.log('Channel deleted status:', updatedChannel?.deleted);
   }
 }
 
