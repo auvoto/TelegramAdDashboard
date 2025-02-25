@@ -6,6 +6,7 @@ import { insertChannelSchema, insertPixelSettingsSchema } from "@shared/schema";
 import multer from "multer";
 import { join } from "path";
 import express from 'express';
+import { mkdir } from 'fs/promises';
 
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
@@ -18,6 +19,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded files
   app.use('/uploads', express.static(uploadsPath));
+
+  // Create uploads directory if it doesn't exist
+  const uploadsDir = join(process.cwd(), 'uploads', 'logos');
+  await mkdir(uploadsDir, { recursive: true }).catch(err => {
+    console.error('Error creating uploads directory:', err);
+  });
 
   // User management routes
   app.get("/api/users", async (req, res) => {
@@ -195,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           statusText: response.statusText,
           error: errorText
         });
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Failed to track event',
           details: errorText
         });
@@ -206,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error('Error tracking event:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Internal server error',
         message: error instanceof Error ? error.message : String(error)
       });
