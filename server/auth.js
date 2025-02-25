@@ -44,12 +44,19 @@ function setupAuth(app) {
       console.log('Attempting login for username:', username);
       try {
         const user = await storage.getUserByUsername(username);
-        const passwordMatch = await comparePasswords(password, user?.password || '');
-        console.log('Password comparison result:', passwordMatch);
-        if (!user || !passwordMatch) {
-          console.log('Login failed: Invalid credentials');
+        if (!user) {
+          console.log('Login failed: User not found');
           return done(null, false);
         }
+
+        const passwordMatch = await comparePasswords(password, user.password);
+        console.log('Password comparison result:', passwordMatch);
+
+        if (!passwordMatch) {
+          console.log('Login failed: Invalid password');
+          return done(null, false);
+        }
+
         console.log('Login successful:', { username: user.username, role: user.role });
         return done(null, user);
       } catch (error) {
@@ -68,6 +75,11 @@ function setupAuth(app) {
     console.log('Deserializing user:', id);
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log('Deserialization failed: User not found');
+        return done(null, false);
+      }
+      console.log('User deserialized successfully:', user.username);
       done(null, user);
     } catch (error) {
       console.error('Deserialization error:', error);
@@ -102,7 +114,7 @@ function setupAuth(app) {
   });
 
   app.post('/api/login', (req, res, next) => {
-    console.log('Login request received:', { username: req.body.username, password: '***' });
+    console.log('Login request received:', { username: req.body.username });
     passport.authenticate('local', (err, user, info) => {
       if (err) {
         console.error('Login error:', err);
@@ -137,11 +149,10 @@ function setupAuth(app) {
   });
 
   app.get('/api/user', (req, res) => {
+    console.log('Auth check:', req.isAuthenticated(), 'User:', req.user?.username);
     if (!req.isAuthenticated()) {
-      console.log('Unauthorized access attempt to /api/user');
       return res.sendStatus(401);
     }
-    console.log('User data requested for:', req.user.username);
     res.json(req.user);
   });
 }
