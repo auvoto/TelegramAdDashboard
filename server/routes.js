@@ -74,8 +74,17 @@ async function registerRoutes(app) {
 
   // Channel management routes
   app.post("/api/channels", upload.single('logo'), async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    if (!req.file) return res.status(400).json({ error: "Logo file is required" });
+    console.log('POST /api/channels - Auth status:', req.isAuthenticated(), 'User:', req.user);
+
+    if (!req.isAuthenticated()) {
+      console.log('Unauthorized attempt to create channel');
+      return res.sendStatus(401);
+    }
+
+    if (!req.file) {
+      console.log('No logo file provided');
+      return res.status(400).json({ error: "Logo file is required" });
+    }
 
     try {
       const channelData = insertChannelSchema.parse({
@@ -87,7 +96,9 @@ async function registerRoutes(app) {
         customAccessToken: req.body.customAccessToken || undefined,
       });
 
+      console.log('Creating channel for user:', req.user.id);
       const channel = await storage.createChannel(channelData, req.user.id, req.file);
+      console.log('Channel created successfully:', channel.id);
       res.status(201).json(channel);
     } catch (error) {
       console.error('Channel creation error:', error);
