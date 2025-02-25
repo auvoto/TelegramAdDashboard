@@ -22,7 +22,7 @@ async function comparePasswords(supplied, stored) {
 
 function setupAuth(app) {
   console.log('Setting up authentication...');
-  
+
   const sessionSettings = {
     secret: process.env.SESSION_SECRET || 'your-session-secret-key',
     resave: false,
@@ -44,7 +44,9 @@ function setupAuth(app) {
       console.log('Attempting login for username:', username);
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        const passwordMatch = await comparePasswords(password, user?.password || '');
+        console.log('Password comparison result:', passwordMatch);
+        if (!user || !passwordMatch) {
           console.log('Login failed: Invalid credentials');
           return done(null, false);
         }
