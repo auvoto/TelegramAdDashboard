@@ -18,6 +18,9 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Add trust proxy to handle potential proxy issues
+  app.set('trust proxy', 1);
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
     resave: false,
