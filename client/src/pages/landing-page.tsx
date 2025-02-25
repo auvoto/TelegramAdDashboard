@@ -60,36 +60,11 @@ export default function LandingPage() {
     event.preventDefault();
     const link = event.currentTarget.href;
 
-    console.log('Attempting to open Telegram link:', link);
+    // First open the window with proper parameters to avoid popup blocking
+    const newWindow = window.open(link, '_blank', 'noopener,noreferrer');
 
-    // Immediately try to open window synchronously
-    let newWindow: Window | null = null;
     try {
-      newWindow = window.open(link, '_blank');
-      console.log('Window open attempt result:', newWindow ? 'success' : 'blocked');
-    } catch (e) {
-      console.error("Failed to open window:", e);
-    }
-
-    // If window was blocked, show user-friendly message
-    if (!newWindow) {
-      const confirmed = confirm(
-        "Popup was blocked. Click OK to open in a new tab, or you can:\n\n" +
-        "1. Click Cancel and enable popups for this site\n" +
-        "2. Try again with the button"
-      );
-
-      if (confirmed) {
-        window.location.href = link;
-      }
-      console.log('Popup was blocked by browser');
-      return;
-    }
-
-    // Track events after window is successfully opened
-    try {
-      console.log('Starting event tracking');
-      // Client-side tracking
+      // Track both client and server side for redundancy
       if (window.fbq) {
         window.fbq("track", "Contact", {
           content_name: channelQuery.data?.name,
@@ -98,12 +73,14 @@ export default function LandingPage() {
         });
       }
 
-      // Server-side tracking
+      // Track server-side
       await trackSubscribe(uuid!);
-      console.log('Event tracking completed');
     } catch (error) {
       console.error("Failed to track event:", error);
     }
+
+    // Focus the window if it was blocked and is now allowed
+    if (newWindow) newWindow.focus();
   }
 
   if (channelQuery.isLoading) {
@@ -139,9 +116,9 @@ export default function LandingPage() {
       </div>
 
       <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
-        <img
-          src={channel.logo}
-          alt={channel.name}
+        <img 
+          src={channel.logo} 
+          alt={channel.name} 
           className="rounded-full mt-5 w-[100px] h-[100px] mx-auto"
         />
         <h1 className="text-2xl font-bold mt-4">
