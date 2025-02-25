@@ -54,11 +54,14 @@ export default function LandingPage() {
     updateCountdown();
   }, [channelQuery.data]);
 
-  const handleTelegramClick = async (
+  async function handleTelegramClick(
     event: React.MouseEvent<HTMLAnchorElement>,
-  ) => {
+  ) {
     event.preventDefault();
     const link = event.currentTarget.href;
+
+    // First open the window with proper parameters to avoid popup blocking
+    const newWindow = window.open(link, '_blank', 'noopener,noreferrer');
 
     try {
       // Track both client and server side for redundancy
@@ -76,9 +79,9 @@ export default function LandingPage() {
       console.error("Failed to track event:", error);
     }
 
-    // Open link in new tab
-    window.open(link, "_blank");
-  };
+    // Focus the window if it was blocked and is now allowed
+    if (newWindow) newWindow.focus();
+  }
 
   if (channelQuery.isLoading) {
     return (
