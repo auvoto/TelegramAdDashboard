@@ -23,48 +23,60 @@ async function comparePasswords(supplied, stored) {
 function setupAuth(app) {
   console.log('Setting up authentication...');
 
+  // Configure session middleware with proper settings
   const sessionSettings = {
     secret: process.env.SESSION_SECRET || 'your-session-secret-key',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    name: 'sid', // Set a specific cookie name
     cookie: {
       secure: false, // Set to true in production with HTTPS
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax'
     }
   };
 
+  // Enable trust proxy if you're behind a reverse proxy
   app.set('trust proxy', 1);
+
+  // Apply session middleware
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      console.log('Attempting login for username:', username);
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user) {
-          console.log('Login failed: User not found');
-          return done(null, false);
-        }
+  // Debug middleware to log session and auth status
+  app.use((req, res, next) => {
+    console.log('Session ID:', req.sessionID);
+    console.log('Is Authenticated:', req.isAuthenticated());
+    console.log('User:', req.user);
+    next();
+  });
 
-        const passwordMatch = await comparePasswords(password, user.password);
-        console.log('Password comparison result:', passwordMatch);
-
-        if (!passwordMatch) {
-          console.log('Login failed: Invalid password');
-          return done(null, false);
-        }
-
-        console.log('Login successful:', { username: user.username, role: user.role });
-        return done(null, user);
-      } catch (error) {
-        console.error('Login error:', error);
-        return done(error);
+  passport.use(new LocalStrategy(async (username, password, done) => {
+    console.log('Login attempt for:', username);
+    try {
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        console.log('User not found:', username);
+        return done(null, false);
       }
-    }),
-  );
+
+      const isValid = await comparePasswords(password, user.password);
+      console.log('Password valid:', isValid);
+
+      if (!isValid) {
+        return done(null, false);
+      }
+
+      console.log('Login successful for:', username);
+      return done(null, user);
+    } catch (error) {
+      console.error('Login error:', error);
+      return done(error);
+    }
+  }));
 
   passport.serializeUser((user, done) => {
     console.log('Serializing user:', user.id);
@@ -76,10 +88,9 @@ function setupAuth(app) {
     try {
       const user = await storage.getUser(id);
       if (!user) {
-        console.log('Deserialization failed: User not found');
+        console.log('User not found during deserialization:', id);
         return done(null, false);
       }
-      console.log('User deserialized successfully:', user.username);
       done(null, user);
     } catch (error) {
       console.error('Deserialization error:', error);
@@ -87,69 +98,79 @@ function setupAuth(app) {
     }
   });
 
-  // API Routes for authentication
-  app.post('/api/register', async (req, res, next) => {
-    console.log('Registration attempt for username:', req.body.username);
+  app.post('/api/register', async (req, res) => {
     try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const { username, password } = req.body;
+
+      const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        console.log('Registration failed: Username exists');
         return res.status(400).send('Username already exists');
       }
 
+      const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
+        username,
+        password: hashedPassword,
+        role: 'employee'
       });
 
       req.login(user, (err) => {
-        if (err) return next(err);
-        console.log('Registration successful:', user.username);
+        if (err) {
+          console.error('Login error after registration:', err);
+          return res.status(500).send(err.message);
+        }
         res.status(201).json(user);
       });
     } catch (error) {
       console.error('Registration error:', error);
-      next(error);
+      res.status(500).send(error.message);
     }
   });
 
   app.post('/api/login', (req, res, next) => {
-    console.log('Login request received:', { username: req.body.username });
     passport.authenticate('local', (err, user, info) => {
       if (err) {
-        console.error('Login error:', err);
+        console.error('Authentication error:', err);
         return next(err);
       }
+
       if (!user) {
-        console.log('Login failed: No user found');
         return res.status(401).json({ message: 'Invalid credentials' });
       }
+
       req.login(user, (err) => {
         if (err) {
           console.error('Session creation error:', err);
           return next(err);
         }
-        console.log('User logged in successfully:', user.username);
+        console.log('Login successful, session created for:', user.username);
         res.json(user);
       });
     })(req, res, next);
   });
 
-  app.post('/api/logout', (req, res, next) => {
+  app.post('/api/logout', (req, res) => {
     const username = req.user?.username;
-    console.log('Logout request for user:', username);
     req.logout((err) => {
       if (err) {
         console.error('Logout error:', err);
-        return next(err);
+        return res.status(500).send(err.message);
       }
-      console.log('User logged out successfully:', username);
-      res.sendStatus(200);
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          return res.status(500).send(err.message);
+        }
+        res.clearCookie('sid');
+        res.sendStatus(200);
+      });
     });
   });
 
   app.get('/api/user', (req, res) => {
-    console.log('Auth check:', req.isAuthenticated(), 'User:', req.user?.username);
+    console.log('GET /api/user - Session:', req.sessionID);
+    console.log('Is authenticated:', req.isAuthenticated());
+
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }

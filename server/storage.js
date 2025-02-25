@@ -12,9 +12,17 @@ const PostgresSessionStore = connectPg(session);
 
 class DatabaseStorage {
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    // Initialize session store with proper error handling
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+      tableName: 'user_sessions',
+      pruneSessionInterval: 60 * 15 // Prune expired sessions every 15 minutes
+    });
+
+    // Handle session store errors
+    this.sessionStore.on('error', (error) => {
+      console.error('Session store error:', error);
     });
   }
 
@@ -145,7 +153,7 @@ class DatabaseStorage {
           eq(channels.deleted, false)
         )
       );
-    console.log('Found channels:', userChannels.length, 'Deleted status of first channel:', userChannels[0]?.deleted);
+    console.log('Found channels:', userChannels.length);
     return userChannels;
   }
 
