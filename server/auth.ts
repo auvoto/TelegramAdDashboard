@@ -23,8 +23,8 @@ export function setupAuth(app: Express) {
 
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || randomBytes(32).toString('hex'),
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed to true for better compatibility
+    saveUninitialized: true, // Changed to true for better compatibility
     store: storage.sessionStore,
     cookie: {
       secure: false, // Allow non-HTTPS for development
@@ -46,7 +46,7 @@ export function setupAuth(app: Express) {
 
         if (!user) {
           console.log('Login failed: User not found');
-          return done(null, false);
+          return done(null, false, { message: 'Invalid username or password' });
         }
 
         const passwordMatch = await comparePasswords(password, user.password);
@@ -54,7 +54,12 @@ export function setupAuth(app: Express) {
 
         if (!passwordMatch) {
           console.log('Login failed: Password mismatch');
-          return done(null, false);
+          return done(null, false, { message: 'Invalid username or password' });
+        }
+
+        if (!user.isActive) {
+          console.log('Login failed: User is inactive');
+          return done(null, false, { message: 'Account is inactive' });
         }
 
         console.log('Login successful:', { username, role: user.role });
@@ -125,7 +130,7 @@ export function setupAuth(app: Express) {
       }
       if (!user) {
         console.log('Authentication failed:', info);
-        return res.status(401).json({ message: "Authentication failed" });
+        return res.status(401).json({ message: info?.message || "Invalid username or password" });
       }
       req.logIn(user, (err) => {
         if (err) {
@@ -145,8 +150,14 @@ export function setupAuth(app: Express) {
         console.error('Logout error:', err);
         return next(err);
       }
-      console.log('User logged out successfully');
-      res.sendStatus(200);
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destroy error:', err);
+          return next(err);
+        }
+        console.log('User logged out successfully');
+        res.sendStatus(200);
+      });
     });
   });
 

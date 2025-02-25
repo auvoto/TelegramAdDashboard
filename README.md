@@ -25,11 +25,11 @@ cp .env.example .env
   ```
   # Required
   DATABASE_URL="postgresql://user:password@host:port/database"
-  SESSION_SECRET="your-secret-key-here"
+  SESSION_SECRET="your-secret-key-here"  # Can be any long random string
 
   # Optional (for Facebook Pixel)
-  FACEBOOK_PIXEL_ID=""
-  FACEBOOK_ACCESS_TOKEN=""
+  FACEBOOK_PIXEL_ID=""      # For tracking
+  FACEBOOK_ACCESS_TOKEN=""  # For server-side events
   ```
 
 3. **Database Setup**
@@ -65,7 +65,7 @@ The application will be available at `http://localhost:5000`
 3. All environment variables should be set in `.env` file
 4. For development, the server runs on port 5000
 
-## Features
+### Features
 - User authentication with role-based access
 - Channel management with CRUD operations
 - Facebook Pixel integration for tracking
@@ -73,7 +73,7 @@ The application will be available at `http://localhost:5000`
 - Analytics tracking
 - File upload for channel logos
 
-## Troubleshooting
+### Troubleshooting
 1. If you see database connection errors:
    - Verify DATABASE_URL is correct in .env
    - Ensure PostgreSQL is running
@@ -82,7 +82,22 @@ The application will be available at `http://localhost:5000`
 2. If session is not working:
    - Make sure SESSION_SECRET is set in .env
    - Clear browser cookies and try again
+   - Check that you're not mixing HTTP and HTTPS in local development
 
 3. If uploads are not working:
    - Check if uploads directory exists
    - Ensure write permissions are correct
+
+4. If login is not working:
+   - Clear browser cookies
+   - Ensure you have at least one user in the database
+   - Check database connection
+   - Verify your username and password
+
+### Local Development Notes
+If running locally (outside Replit), you can safely remove these Replit-specific packages from package.json:
+- "@replit/vite-plugin-cartographer"
+- "@replit/vite-plugin-runtime-error-modal"
+- "@replit/vite-plugin-shadcn-theme-json"
+
+The core functionality will work without these packages.
