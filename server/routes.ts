@@ -240,6 +240,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add PATCH endpoint for channels
+  app.patch("/api/channels/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const channelId = parseInt(req.params.id);
+    if (isNaN(channelId)) {
+      return res.status(400).json({ error: "Invalid channel ID" });
+    }
+
+    try {
+      const updatedChannel = await storage.updateChannel(channelId, req.body);
+
+      // Clear the cache for this channel
+      const channel = await storage.getChannel(updatedChannel.uuid);
+      if (channel) {
+        cache.del(`channel_${channel.uuid}`);
+      }
+
+      res.json(updatedChannel);
+    } catch (error) {
+      console.error('Error updating channel:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  // Create http server and return it
   const httpServer = createServer(app);
   return httpServer;
 }

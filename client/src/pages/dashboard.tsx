@@ -22,9 +22,10 @@ import {
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChannelForm } from "@/components/channel-form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 // Channel Info Dialog Component
 function ChannelInfoDialog({
@@ -38,6 +39,46 @@ function ChannelInfoDialog({
 }) {
   const { toast } = useToast();
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedChannel, setEditedChannel] = useState<Partial<Channel>>({});
+
+  const updateChannelMutation = useMutation({
+    mutationFn: async (data: Partial<Channel>) => {
+      const res = await fetch(`/api/channels/${channel?.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      return res.json();
+    },
+    onSuccess: (updatedChannel) => {
+      // Update the channels data in the cache
+      const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
+      queryClient.setQueryData(
+        ["/api/channels"],
+        currentChannels.map(c => c.id === updatedChannel.id ? updatedChannel : c)
+      );
+
+      toast({
+        title: "Channel updated",
+        description: "Changes have been saved successfully.",
+      });
+      setIsEditing(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCopy = (text: string | undefined | null, field: string) => {
     if (!text) return;
@@ -50,11 +91,45 @@ function ChannelInfoDialog({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleSave = () => {
+    if (!channel || Object.keys(editedChannel).length === 0) return;
+    updateChannelMutation.mutate(editedChannel);
+  };
+
+  useEffect(() => {
+    if (channel && isEditing) {
+      setEditedChannel({
+        name: channel.name,
+        nickname: channel.nickname,
+        subscribers: channel.subscribers,
+        description: channel.description,
+        inviteLink: channel.inviteLink,
+      });
+    } else {
+      setEditedChannel({});
+    }
+  }, [channel, isEditing]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Channel Details</DialogTitle>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (isEditing) {
+                  setIsEditing(false);
+                  setEditedChannel({});
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+            >
+              {isEditing ? "Cancel" : "Edit"}
+            </Button>
+          </div>
         </DialogHeader>
         <div className="overflow-y-auto pr-6 max-h-[calc(80vh-8rem)]">
           {channel && (
@@ -62,50 +137,95 @@ function ChannelInfoDialog({
               <div className="flex items-center gap-3">
                 <img src={channel.logo} alt={channel.name} className="w-16 h-16 rounded-full" />
                 <div>
-                  <h3 className="font-semibold">{channel.name}</h3>
-                  {channel.nickname && (
-                    <p className="text-sm text-gray-500">({channel.nickname})</p>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editedChannel.name || ""}
+                        onChange={(e) => setEditedChannel(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Channel name"
+                      />
+                      <Input
+                        value={editedChannel.nickname || ""}
+                        onChange={(e) => setEditedChannel(prev => ({ ...prev, nickname: e.target.value }))}
+                        placeholder="Nickname (optional)"
+                      />
+                      <Input
+                        type="number"
+                        value={editedChannel.subscribers || 0}
+                        onChange={(e) => setEditedChannel(prev => ({ ...prev, subscribers: parseInt(e.target.value) }))}
+                        placeholder="Subscribers"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="font-semibold">{channel.name}</h3>
+                      {channel.nickname && (
+                        <p className="text-sm text-gray-500">({channel.nickname})</p>
+                      )}
+                      <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
+                    </>
                   )}
-                  <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold">Description</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleCopy(channel.description, 'description')}
-                  >
-                    {copiedField === 'description' ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
+                  {!isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleCopy(channel.description, 'description')}
+                    >
+                      {copiedField === 'description' ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
-                <p className="text-gray-600 whitespace-pre-line mt-1">{channel.description}</p>
+                {isEditing ? (
+                  <Textarea
+                    value={editedChannel.description || ""}
+                    onChange={(e) => setEditedChannel(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Channel description"
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="text-gray-600 whitespace-pre-line mt-1">{channel.description}</p>
+                )}
               </div>
 
               <div>
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold">Invite Link</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleCopy(channel.inviteLink, 'inviteLink')}
-                  >
-                    {copiedField === 'inviteLink' ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
+                  {!isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleCopy(channel.inviteLink, 'inviteLink')}
+                    >
+                      {copiedField === 'inviteLink' ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 break-all mt-1">{channel.inviteLink}</p>
+                {isEditing ? (
+                  <Input
+                    value={editedChannel.inviteLink || ""}
+                    onChange={(e) => setEditedChannel(prev => ({ ...prev, inviteLink: e.target.value }))}
+                    placeholder="Telegram invite link"
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-600 break-all mt-1">{channel.inviteLink}</p>
+                )}
               </div>
 
               <div>
@@ -168,6 +288,19 @@ function ChannelInfoDialog({
                     </Button>
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{channel.customAccessToken}</p>
+                </div>
+              )}
+
+              {isEditing && (
+                <div className="sticky bottom-0 pt-4 bg-white">
+                  <Button 
+                    className="w-full"
+                    onClick={handleSave}
+                    disabled={updateChannelMutation.isPending}
+                  >
+                    {updateChannelMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
                 </div>
               )}
             </div>
@@ -261,20 +394,20 @@ export default function Dashboard() {
 
   const deleteChannelMutation = useMutation({
     mutationFn: async (id: number) => {
-      console.log('Attempting to delete channel:', id); 
+      console.log('Attempting to delete channel:', id);
       const res = await fetch(`/api/channels/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Delete channel failed:', errorText); 
+        console.error('Delete channel failed:', errorText);
         throw new Error(errorText);
       }
       return id;
     },
     onSuccess: (deletedId) => {
-      console.log('Channel deleted successfully:', deletedId); 
+      console.log('Channel deleted successfully:', deletedId);
       // Update the channels data in the cache by filtering out the deleted channel
       const currentChannels = queryClient.getQueryData<Channel[]>(["/api/channels"]) || [];
       queryClient.setQueryData(
@@ -288,7 +421,7 @@ export default function Dashboard() {
       });
     },
     onError: (error: Error) => {
-      console.error('Delete channel mutation error:', error); 
+      console.error('Delete channel mutation error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -372,6 +505,9 @@ export default function Dashboard() {
                     <img src={channel.logo} alt={channel.name} className="w-12 h-12 rounded-full object-cover shadow-md" />
                     <div>
                       <CardTitle className="text-gray-800">{channel.name}</CardTitle>
+                      {channel.nickname && (
+                        <p className="text-sm text-gray-500">({channel.nickname})</p>
+                      )}
                       <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
                     </div>
                   </div>
