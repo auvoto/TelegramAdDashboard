@@ -53,6 +53,7 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
       formData.append("logo", logoFiles[0]);
     }
 
+    console.log('Form data being sent:', Object.fromEntries(formData.entries()));
     onSubmit(formData);
   });
 
@@ -108,8 +109,8 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
             <FormItem>
               <FormLabel>Channel Logo</FormLabel>
               <FormControl>
-                <Input 
-                  type="file" 
+                <Input
+                  type="file"
                   accept="image/*"
                   onChange={(e) => onChange(e.target.files)}
                   {...field}

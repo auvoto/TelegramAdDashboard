@@ -99,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const channelData = insertChannelSchema.parse({
         name: req.body.name,
+        nickname: req.body.nickname || undefined,
         subscribers: req.body.subscribers,
         inviteLink: req.body.inviteLink,
         description: req.body.description || undefined,
@@ -106,6 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customAccessToken: req.body.customAccessToken || undefined,
       });
 
+      console.log('Creating channel with data:', channelData);
       const channel = await storage.createChannel(channelData, req.user.id, req.file);
       res.status(201).json(channel);
     } catch (error) {
