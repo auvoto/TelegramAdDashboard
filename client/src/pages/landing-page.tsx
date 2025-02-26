@@ -2,11 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Channel } from "@shared/schema";
 import { Loader2 } from "lucide-react";
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect } from "react";
 import { initFacebookPixel, trackPageView, trackSubscribe } from "@/lib/facebook-pixel";
-
-// Lazy load image component to reduce initial bundle size
-const Image = lazy(() => import('@/components/ui/image'));
 
 declare global {
   interface Window {
@@ -19,29 +16,22 @@ export default function LandingPage() {
   const channelQuery = useQuery<Channel>({
     queryKey: [`/api/channels/${uuid}`],
     staleTime: 300000, // Cache for 5 minutes
-    cacheTime: 3600000, // Keep in cache for 1 hour
+    gcTime: 3600000, // Keep in cache for 1 hour
   });
 
   useEffect(() => {
     if (!channelQuery.data) return;
 
-    const channel = channelQuery.data;
-    const pixelId = channel.customPixelId || '520700944254644';
-
-    // Preload logo image
-    const img = new Image();
-    img.src = channel.logo;
-
-    // Initialize Facebook Pixel
+    const pixelId = channelQuery.data.customPixelId || '520700944254644';
     initFacebookPixel(pixelId);
     trackPageView();
 
     // Track channel view
     if (window.fbq) {
       window.fbq("track", "ViewContent", {
-        content_name: channel.name,
+        content_name: channelQuery.data.name,
         content_type: 'channel',
-        content_ids: [channel.uuid]
+        content_ids: [channelQuery.data.uuid]
       });
     }
 
@@ -69,9 +59,9 @@ export default function LandingPage() {
     const newWindow = window.open(link, '_blank', 'noopener,noreferrer');
 
     try {
-      if (window.fbq) {
+      if (window.fbq && channelQuery.data) {
         window.fbq("track", "Contact", {
-          content_name: channelQuery.data?.name,
+          content_name: channelQuery.data.name,
           content_type: 'channel',
           content_ids: [uuid]
         });
@@ -117,15 +107,13 @@ export default function LandingPage() {
       </div>
 
       <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
-        <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-border mx-auto" />}>
-          <Image 
-            src={channel.logo} 
-            alt={channel.name} 
-            className="rounded-full mt-5 w-[100px] h-[100px] mx-auto"
-            loading="eager"
-            decoding="async"
-          />
-        </Suspense>
+        <img 
+          src={channel.logo} 
+          alt={channel.name} 
+          className="rounded-full mt-5 w-[100px] h-[100px] mx-auto"
+          loading="eager"
+          decoding="async"
+        />
         <h1 className="text-2xl font-bold mt-4">
           {channel.name}
         </h1>
