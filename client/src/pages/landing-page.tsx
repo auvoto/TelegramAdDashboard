@@ -2,8 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Channel } from "@shared/schema";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { initFacebookPixel, trackPageView, trackSubscribe } from "@/lib/facebook-pixel";
+
+// Lazy load image component to reduce initial bundle size
+const Image = lazy(() => import('@/components/ui/image'));
 
 declare global {
   interface Window {
@@ -15,17 +18,21 @@ export default function LandingPage() {
   const { uuid } = useParams();
   const channelQuery = useQuery<Channel>({
     queryKey: [`/api/channels/${uuid}`],
+    staleTime: 300000, // Cache for 5 minutes
+    cacheTime: 3600000, // Keep in cache for 1 hour
   });
 
   useEffect(() => {
     if (!channelQuery.data) return;
 
     const channel = channelQuery.data;
-    // Always use channel-specific pixel if available, otherwise fall back to default
     const pixelId = channel.customPixelId || '520700944254644';
 
-    console.log('Initializing pixel:', pixelId, 'for channel:', channel.name);
+    // Preload logo image
+    const img = new Image();
+    img.src = channel.logo;
 
+    // Initialize Facebook Pixel
     initFacebookPixel(pixelId);
     trackPageView();
 
@@ -59,12 +66,9 @@ export default function LandingPage() {
   ) {
     event.preventDefault();
     const link = event.currentTarget.href;
-
-    // First open the window with proper parameters to avoid popup blocking
     const newWindow = window.open(link, '_blank', 'noopener,noreferrer');
 
     try {
-      // Track both client and server side for redundancy
       if (window.fbq) {
         window.fbq("track", "Contact", {
           content_name: channelQuery.data?.name,
@@ -72,14 +76,11 @@ export default function LandingPage() {
           content_ids: [uuid]
         });
       }
-
-      // Track server-side
       await trackSubscribe(uuid!);
     } catch (error) {
       console.error("Failed to track event:", error);
     }
 
-    // Focus the window if it was blocked and is now allowed
     if (newWindow) newWindow.focus();
   }
 
@@ -116,11 +117,15 @@ export default function LandingPage() {
       </div>
 
       <div className="max-w-[500px] w-[90%] mx-auto bg-white p-5 rounded-lg shadow-md mt-4">
-        <img 
-          src={channel.logo} 
-          alt={channel.name} 
-          className="rounded-full mt-5 w-[100px] h-[100px] mx-auto"
-        />
+        <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-border mx-auto" />}>
+          <Image 
+            src={channel.logo} 
+            alt={channel.name} 
+            className="rounded-full mt-5 w-[100px] h-[100px] mx-auto"
+            loading="eager"
+            decoding="async"
+          />
+        </Suspense>
         <h1 className="text-2xl font-bold mt-4">
           {channel.name}
         </h1>

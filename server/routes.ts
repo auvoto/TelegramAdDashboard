@@ -23,11 +23,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   setupAuth(app);
 
-  // Serve uploaded files
+  // Serve uploaded files with aggressive caching
   app.use('/uploads', express.static(uploadsPath, {
-    maxAge: '1d',
+    maxAge: '7d', // Cache for 7 days
     etag: true,
-    lastModified: true
+    lastModified: true,
+    immutable: true // Indicates the file will never change
   }));
 
   // Create uploads directory if it doesn't exist
@@ -123,7 +124,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const cacheKey = `channel_${req.params.uuid}`;
     const cachedChannel = cache.get(cacheKey);
 
+    // Generate ETag based on channel data
+    const generateETag = (channel: any) => {
+      return `"${channel.id}-${channel.updatedAt || Date.now()}"`;
+    };
+
     if (cachedChannel) {
+      const etag = generateETag(cachedChannel);
+      res.set('ETag', etag);
+
+      // Check if client cache is still valid
+      if (req.headers['if-none-match'] === etag) {
+        return res.status(304).end();
+      }
+
+      res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
       return res.json(cachedChannel);
     }
 
@@ -132,6 +147,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Cache for 5 minutes
     cache.set(cacheKey, channel);
+
+    const etag = generateETag(channel);
+    res.set('ETag', etag);
+    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
     res.json(channel);
   });
 
