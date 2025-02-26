@@ -158,8 +158,23 @@ export class DatabaseStorage implements IStorage {
 
   async getUserChannels(userId: number): Promise<Channel[]> {
     console.log('Fetching channels for user:', userId);
+    // Use explicit select to ensure all columns are included
     const userChannels = await db
-      .select()
+      .select({
+        id: channels.id,
+        uuid: channels.uuid,
+        name: channels.name,
+        nickname: channels.nickname,
+        subscribers: channels.subscribers,
+        logo: channels.logo,
+        inviteLink: channels.inviteLink,
+        description: channels.description,
+        createdAt: channels.createdAt,
+        userId: channels.userId,
+        customPixelId: channels.customPixelId,
+        customAccessToken: channels.customAccessToken,
+        deleted: channels.deleted
+      })
       .from(channels)
       .where(
         and(
@@ -167,7 +182,7 @@ export class DatabaseStorage implements IStorage {
           eq(channels.deleted, false)
         )
       );
-    console.log('Found channels:', userChannels.length, 'Deleted status of first channel:', userChannels[0]?.deleted);
+    console.log('Found channels:', userChannels.length, 'First channel:', userChannels[0]);
     return userChannels;
   }
 
