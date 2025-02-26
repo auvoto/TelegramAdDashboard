@@ -63,6 +63,9 @@ function ChannelInfoDialog({
                 <img src={channel.logo} alt={channel.name} className="w-16 h-16 rounded-full" />
                 <div>
                   <h3 className="font-semibold">{channel.name}</h3>
+                  {channel.nickname && (
+                    <p className="text-sm text-gray-500">({channel.nickname})</p>
+                  )}
                   <p className="text-sm text-gray-500">{channel.subscribers} subscribers</p>
                 </div>
               </div>

@@ -22,6 +22,7 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
     resolver: zodResolver(insertChannelSchema),
     defaultValues: {
       name: "",
+      nickname: "",
       subscribers: 0,
       inviteLink: "",
       description: "",
@@ -34,6 +35,7 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
   const handleSubmit = form.handleSubmit((data) => {
     const formData = new FormData();
     formData.append("name", data.name);
+    formData.append("nickname", data.nickname || "");
     formData.append("subscribers", String(data.subscribers));
     formData.append("inviteLink", data.inviteLink);
     if (data.description) {
@@ -65,6 +67,20 @@ export function ChannelForm({ onSubmit, isLoading = false }: ChannelFormProps) {
               <FormLabel>Channel Name</FormLabel>
               <FormControl>
                 <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nickname"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nickname (Optional)</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Channel nickname or alias" />
               </FormControl>
               <FormMessage />
             </FormItem>

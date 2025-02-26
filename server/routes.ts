@@ -7,6 +7,9 @@ import multer from "multer";
 import { join } from "path";
 import express from 'express';
 import { mkdir } from 'fs/promises';
+import { cache } from "./db";
+import { eq } from "drizzle-orm";
+import compression from "compression";
 
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
@@ -15,10 +18,17 @@ const upload = multer({ storage: multer.memoryStorage() });
 const uploadsPath = join(process.cwd(), 'uploads');
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Enable compression for all routes
+  app.use(compression());
+
   setupAuth(app);
 
   // Serve uploaded files
-  app.use('/uploads', express.static(uploadsPath));
+  app.use('/uploads', express.static(uploadsPath, {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true
+  }));
 
   // Create uploads directory if it doesn't exist
   const uploadsDir = join(process.cwd(), 'uploads', 'logos');
@@ -110,8 +120,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/channels/:uuid", async (req, res) => {
+    const cacheKey = `channel_${req.params.uuid}`;
+    const cachedChannel = cache.get(cacheKey);
+
+    if (cachedChannel) {
+      return res.json(cachedChannel);
+    }
+
     const channel = await storage.getChannel(req.params.uuid);
     if (!channel) return res.sendStatus(404);
+
+    // Cache for 5 minutes
+    cache.set(cacheKey, channel);
     res.json(channel);
   });
 

@@ -101,3 +101,79 @@ If running locally (outside Replit), you can safely remove these Replit-specific
 - "@replit/vite-plugin-shadcn-theme-json"
 
 The core functionality will work without these packages.
+
+### Data Migration from Replit to Local Setup
+When moving the project from Replit to your local environment, follow these steps:
+
+1. First, set up the folder structure:
+```bash
+mkdir -p uploads/logos
+```
+
+2. Copy all channel logo images from the Replit environment to your local `uploads/logos` directory. The following files need to be copied:
+- crypto_gyan_logo.png
+- CRYPTOMANTRA.jpeg
+- class with dipak.jpeg
+- Financial Catalysts.JPG
+- Screenshot 2025-02-23 at 2.16.17â¯PM.png
+- 12c258e8-32c4-49bb-9c77-49c07df2e9e2.webp
+
+3. Set up your local PostgreSQL database:
+   - Create a new database
+   - Copy `.env.example` to `.env` and update the DATABASE_URL
+   - Run the migration queries in this order:
+      ```sql
+      -- 1. Create tables
+      CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          username TEXT NOT NULL UNIQUE,
+          password TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'employee',
+          is_active BOOLEAN NOT NULL DEFAULT true
+      );
+
+      CREATE TABLE IF NOT EXISTS channels (
+          id SERIAL PRIMARY KEY,
+          uuid TEXT NOT NULL,
+          name TEXT NOT NULL,
+          subscribers INTEGER NOT NULL,
+          logo TEXT NOT NULL,
+          invite_link TEXT NOT NULL,
+          description TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          custom_pixel_id TEXT,
+          custom_access_token TEXT,
+          deleted BOOLEAN NOT NULL DEFAULT false
+      );
+
+      CREATE TABLE IF NOT EXISTS pixel_settings (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          pixel_id TEXT NOT NULL,
+          access_token TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- 2. Create admin user
+      INSERT INTO users (username, password, role, is_active) 
+      VALUES ('auvoto', 'Auvoto@1234', 'admin', true)
+      ON CONFLICT (username) DO NOTHING;
+      ```
+
+   - Then run the channel data import query provided separately (due to its length)
+
+4. Start the application:
+```bash
+npm install
+npm run dev
+```
+
+### Migrating to MongoDB
+If you want to migrate to MongoDB instead of PostgreSQL, this will require significant changes:
+- Replacing Drizzle ORM with Mongoose
+- Rewriting the storage layer
+- Updating session management
+- Converting schemas to MongoDB format
+
+Please request the MongoDB migration as a separate task if needed.

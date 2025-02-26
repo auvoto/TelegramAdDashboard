@@ -22,6 +22,7 @@ export const channels = pgTable("channels", {
   id: serial("id").primaryKey(),
   uuid: text("uuid").notNull().unique(),
   name: text("name").notNull(),
+  nickname: text("nickname"),  // Added nickname field
   subscribers: integer("subscribers").notNull(),
   logo: text("logo").notNull(),
   inviteLink: text("invite_link").notNull(),
@@ -59,7 +60,8 @@ export const insertChannelSchema = createInsertSchema(channels)
     inviteLink: true,
     description: true,
     customPixelId: true,
-    customAccessToken: true
+    customAccessToken: true,
+    nickname: true
   })
   .extend({
     subscribers: z.coerce.number().min(0),
@@ -67,6 +69,7 @@ export const insertChannelSchema = createInsertSchema(channels)
     logo: z.any(), // This is a placeholder, needs further refinement based on the actual File type.
     customPixelId: z.string().optional(),
     customAccessToken: z.string().optional(),
+    nickname: z.string().optional(),
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
