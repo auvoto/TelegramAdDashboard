@@ -3,7 +3,7 @@ module.exports = {
     name: "telegram-marketing",
     script: "npm",
     args: "start",
-    instances: "max",
+    instances: 1, // Start with 1 instance initially
     exec_mode: "cluster",
     env: {
       NODE_ENV: "production"

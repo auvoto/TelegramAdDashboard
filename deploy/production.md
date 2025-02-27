@@ -15,6 +15,9 @@ cd /var/www/telegram-marketing
 
 # Create uploads directory
 mkdir -p uploads/logos
+
+# Create logs directory for PM2
+mkdir -p logs
 ```
 
 ### 2. Environment Setup
@@ -37,7 +40,7 @@ npm install
 npm run build
 
 # Start with PM2
-pm2 start npm --name "telegram-marketing" -- start
+pm2 start ecosystem.config.js
 ```
 
 ### 4. Nginx Configuration
@@ -198,4 +201,3 @@ pg_dump -U your_user your_database > backup.sql
 4. Clean old logs:
 ```bash
 pm2 flush
-```

@@ -41,15 +41,27 @@ function ChannelInfoDialog({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedChannel, setEditedChannel] = useState<Partial<Channel>>({});
+  const [newLogo, setNewLogo] = useState<File | null>(null);
 
   const updateChannelMutation = useMutation({
     mutationFn: async (data: Partial<Channel>) => {
+      const formData = new FormData();
+
+      // Add all fields to formData
+      if (data.name) formData.append('name', data.name);
+      if (data.nickname) formData.append('nickname', data.nickname);
+      if (data.subscribers) formData.append('subscribers', String(data.subscribers));
+      if (data.description) formData.append('description', data.description);
+      if (data.inviteLink) formData.append('inviteLink', data.inviteLink);
+
+      // Add logo if changed
+      if (newLogo) {
+        formData.append('logo', newLogo);
+      }
+
       const res = await fetch(`/api/channels/${channel?.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: formData,
         credentials: "include",
       });
       if (!res.ok) {
@@ -70,6 +82,7 @@ function ChannelInfoDialog({
         description: "Changes have been saved successfully.",
       });
       setIsEditing(false);
+      setNewLogo(null);
     },
     onError: (error: Error) => {
       toast({
@@ -122,6 +135,7 @@ function ChannelInfoDialog({
                 if (isEditing) {
                   setIsEditing(false);
                   setEditedChannel({});
+                  setNewLogo(null);
                 } else {
                   setIsEditing(true);
                 }
@@ -135,7 +149,26 @@ function ChannelInfoDialog({
           {channel && (
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <img src={channel.logo} alt={channel.name} className="w-16 h-16 rounded-full" />
+                <div className="relative">
+                  <img 
+                    src={newLogo ? URL.createObjectURL(newLogo) : channel.logo} 
+                    alt={channel.name} 
+                    className="w-16 h-16 rounded-full"
+                  />
+                  {isEditing && (
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setNewLogo(file);
+                        }
+                      }}
+                    />
+                  )}
+                </div>
                 <div>
                   {isEditing ? (
                     <div className="space-y-2">

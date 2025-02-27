@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { join } from "path";
+import { createServer } from "http";
 
 const app = express();
 app.use(express.json());
@@ -40,29 +41,48 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  const server = await registerRoutes(app);
+async function startServer(port: number): Promise<void> {
+  try {
+    log(`Starting server setup...`);
+    const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+      throw err;
+    });
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      // reusePort: true,
+    }, () => {
+      log(`Server started successfully on port ${port}`);
+    });
+
+    // Handle server errors
+    server.on('error', (error: any) => {
+      if (error.code === 'EADDRINUSE') {
+        log(`Port ${port} is already in use. Trying next port...`);
+        startServer(port + 1);
+      } else {
+        log(`Server error: ${error.message}`);
+        process.exit(1);
+      }
+    });
+
+  } catch (error) {
+    log(`Failed to start server: ${error}`);
+    process.exit(1);
   }
+}
 
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    // reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+// Start with initial port
+startServer(5000);

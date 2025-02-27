@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add PATCH endpoint for channels
-  app.patch("/api/channels/:id", async (req, res) => {
+  app.patch("/api/channels/:id", upload.single('logo'), async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const updatedChannel = await storage.updateChannel(channelId, req.body);
+      const updatedChannel = await storage.updateChannel(channelId, req.body, req.file);
 
       // Clear the cache for this channel
       const channel = await storage.getChannel(updatedChannel.uuid);
