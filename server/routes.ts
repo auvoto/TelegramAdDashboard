@@ -208,6 +208,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Using default pixel settings');
       }
 
+      // Get available cookies, defaulting to empty strings if not present
+      const fbp = req.cookies?._fbp || '';
+      const fbc = req.cookies?._fbc || '';
+
+      console.log('Sending event to Facebook API with pixelId:', pixelId);
+
       // Track event using Facebook Conversion API
       const response = await fetch(`https://graph.facebook.com/v18.0/${pixelId}/events`, {
         method: 'POST',
@@ -224,8 +230,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             user_data: {
               client_ip_address: req.ip || '',
               client_user_agent: req.headers['user-agent'] || '',
-              fbp: req.cookies._fbp || '',
-              fbc: req.cookies._fbc || ''
+              fbp: fbp || undefined,
+              fbc: fbc || undefined
             },
             custom_data: {
               content_name: channel.name,
@@ -241,7 +247,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Facebook API Error:', {
           status: response.status,
           statusText: response.statusText,
-          error: errorText
+          error: errorText,
+          pixelId,
+          channelId: channel.uuid
         });
         return res.status(500).json({
           error: 'Failed to track event',
